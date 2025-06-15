@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Debrid Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #f5f7fa;
+        }
+        .connection-status {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .connected {
+            background-color: #4ade80;
+            color: white;
+        }
+        .disconnected {
+            background-color: #f87171;
+            color: white;
+        }
+        .code-display {
+            font-family: monospace;
+            background-color: #f3f4f6;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-xl shadow-lg p-6 max-w-2xl mx-auto">
+            <h1 class="text-3xl font-bold text-center text-indigo-600 mb-6">محول Real-Debrid</h1>
+            
+            <div id="connectionSection" class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2">معرف Telegram الخاص بك:</label>
+                <div class="flex gap-2">
+                    <input id="telegramUserId" type="text" 
+                        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button id="generateCodeBtn" 
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                        توليد كود
+                    </button>
+                </div>
+                <div id="codeContainer" class="hidden mt-2">
+                    <p class="text-sm text-gray-600">أرسل هذا الكود إلى البوت:</p>
+                    <div id="verificationCode" class="code-display"></div>
+                    <p id="codeStatus" class="text-sm mt-1"></p>
+                </div>
+            </div>
+            
+            <div id="magnetSection" class="mb-6 hidden">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="block text-gray-700 text-sm font-bold">رابط المغناطيس:</label>
+                    <button id="clearMagnetBtn" class="text-red-600 hover:text-red-800 text-sm">
+                        حذف الرابط
+                    </button>
+                </div>
+                <textarea id="magnetLink" rows="4"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="أدخل رابط المغناطيس هنا (يجب أن يبدأ بـ magnet:?xt=urn:btih:)"></textarea>
+                
+                <button id="processBtn" 
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 mt-2">
+                    معالجة الرابط
+                </button>
+            </div>
+            
+            <div id="statusContainer" class="mt-6 hidden">
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p id="statusText" class="text-sm text-blue-700">جاري المعالجة...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="resultContainer" class="mt-6 hidden">
+                <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
+                    <h3 id="resultTitle" class="text-lg font-bold text-green-800 mb-2"></h3>
+                    <p id="fileInfo" class="text-gray-600 mb-3"></p>
+                    <a id="directLink" href="#" target="_blank" class="text-indigo-600 hover:underline break-all block mb-4"></a>
+                    
+                    <div class="flex flex-wrap gap-2">
+                        <button id="sendToAppBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
+                            إرسال إلى التطبيق
+                        </button>
+                        <button id="copyLinkBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">
+                            نسخ الرابط
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="connectionStatus" class="connection-status disconnected">غير متصل</div>
+
+    <script>
+        // WebSocket Configuration
+        const WS_URL = `ws://${window.location.hostname}:8765`;
+        let ws;
+        let telegramUserId = '';
+        let currentLink = '';
+        let verificationCode = '';
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+
+        // DOM Elements
+        const connectionSection = document.getElementById('connectionSection');
+        const magnetSection = document.getElementById('magnetSection');
+        const telegramUserIdInput = document.getElementById('telegramUserId');
+        const generateCodeBtn = document.getElementById('generateCodeBtn');
+        const codeContainer = document.getElementById('codeContainer');
+        const verificationCodeDisplay = document.getElementById('verificationCode');
+        const codeStatus = document.getElementById('codeStatus');
+        const magnetLinkInput = document.getElementById('magnetLink');
+        const clearMagnetBtn = document.getElementById('clearMagnetBtn');
+        const processBtn = document.getElementById('processBtn');
+        const statusContainer = document.getElementById('statusContainer');
+        const statusText = document.getElementById('statusText');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultTitle = document.getElementById('resultTitle');
+        const fileInfo = document.getElementById('fileInfo');
+        const directLink = document.getElementById('directLink');
+        const sendToAppBtn = document.getElementById('sendToAppBtn');
+        const copyLinkBtn = document.getElementById('copyLinkBtn');
+        const connectionStatus = document.getElementById('connectionStatus');
+
+        // Load saved Telegram ID
+        if (localStorage.getItem('telegramUserId')) {
+            telegramUserIdInput.value = localStorage.getItem('telegramUserId');
+        }
+
+        // Generate Code Button Click Handler
+        generateCodeBtn.addEventListener('click', generateVerificationCode);
+
+        // Clear Magnet Button Click Handler
+        clearMagnetBtn.addEventListener('click', () => {
+            magnetLinkInput.value = '';
+        });
+
+        // Process Button Click Handler
+        processBtn.addEventListener('click', processMagnetLink);
+
+        function generateVerificationCode() {
+            telegramUserId = telegramUserIdInput.value.trim();
+            
+            if (!telegramUserId) {
+                alert('الرجاء إدخال معرف Telegram الخاص بك');
+                return;
+            }
+            
+            localStorage.setItem('telegramUserId', telegramUserId);
+            
+            // Generate 6-digit random code
+            verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+            verificationCodeDisplay.textContent = verificationCode;
+            codeContainer.classList.remove('hidden');
+            codeStatus.textContent = 'بانتظار التحقق...';
+            codeStatus.className = 'text-sm mt-1 text-yellow-600';
+            
+            // Connect to WebSocket
+            connectWebSocket();
+        }
+
+        function connectWebSocket() {
+            // Close existing connection if any
+            if (ws) {
+                ws.close();
+            }
+            
+            statusContainer.classList.remove('hidden');
+            statusText.textContent = 'جاري الاتصال بالبوت...';
+            
+            ws = new WebSocket(WS_URL);
+            
+            ws.onopen = () => {
+                updateConnectionStatus(true);
+                statusText.textContent = 'تم الاتصال بالبوت بنجاح';
+                reconnectAttempts = 0;
+                
+                // Show magnet section after connection
+                magnetSection.classList.remove('hidden');
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log('Received:', data);
+                
+                if (data.type === 'code_verification') {
+                    if (data.status === 'success') {
+                        codeStatus.textContent = 'تم التحقق بنجاح!';
+                        codeStatus.className = 'text-sm mt-1 text-green-600';
+                        magnetSection.classList.remove('hidden');
+                    } else {
+                        codeStatus.textContent = 'كود التحقق غير صحيح';
+                        codeStatus.className = 'text-sm mt-1 text-red-600';
+                    }
+                } else if (data.type === 'direct_link_ready') {
+                    showResult(data.payload);
+                } else if (data.type === 'connection_status') {
+                    updateConnectionStatus(data.status === 'connected');
+                    statusText.textContent = data.message;
+                }
+            };
+            
+            ws.onclose = () => {
+                updateConnectionStatus(false);
+                statusText.textContent = 'تم قطع الاتصال بالبوت';
+                attemptReconnect();
+            };
+            
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                updateConnectionStatus(false);
+                statusText.textContent = 'حدث خطأ في الاتصال بالبوت';
+            };
+        }
+
+        function processMagnetLink() {
+            const magnetLink = magnetLinkInput.value.trim();
+            
+            if (!magnetLink.startsWith('magnet:')) {
+                alert('الرجاء إدخال رابط مغناطيسي صحيح يبدأ بـ magnet:?xt=urn:btih:');
+                return;
+            }
+            
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('غير متصل بالبوت، يرجى توليد كود جديد');
+                return;
+            }
+            
+            statusContainer.classList.remove('hidden');
+            statusText.textContent = 'جاري معالجة الرابط...';
+            
+            ws.send(JSON.stringify({
+                type: 'process_magnet',
+                userId: telegramUserId,
+                code: verificationCode,
+                magnetLink: magnetLink
+            }));
+        }
+
+        function updateConnectionStatus(isConnected) {
+            if (isConnected) {
+                connectionStatus.textContent = 'متصل';
+                connectionStatus.classList.remove('disconnected');
+                connectionStatus.classList.add('connected');
+            } else {
+                connectionStatus.textContent = 'غير متصل';
+                connectionStatus.classList.remove('connected');
+                connectionStatus.classList.add('disconnected');
+            }
+        }
+
+        function attemptReconnect() {
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                console.log(`Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts})`);
+                setTimeout(connectWebSocket, 3000);
+            } else {
+                console.log('Max reconnection attempts reached');
+            }
+        }
+
+        function showResult(data) {
+            currentLink = data.directLink;
+            
+            resultTitle.textContent = data.title;
+            fileInfo.textContent = `حجم الملف: ${data.fileSize || 'غير معروف'} | النوع: ${data.mediaType || 'غير معروف'}`;
+            directLink.textContent = data.directLink;
+            directLink.href = data.directLink;
+            
+            resultContainer.classList.remove('hidden');
+            statusContainer.classList.add('hidden');
+            
+            // Scroll to result
+            resultContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Send to App Button Click Handler
+        sendToAppBtn.addEventListener('click', () => {
+            if (!currentLink) {
+                alert('لا يوجد رابط متاح للإرسال');
+                return;
+            }
+            
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('غير متصل بالبوت، يرجى الاتصال أولاً');
+                return;
+            }
+            
+            ws.send(JSON.stringify({
+                type: 'send_to_app',
+                userId: telegramUserId,
+                link: currentLink
+            }));
+            
+            alert('تم إرسال الرابط إلى التطبيق بنجاح');
+        });
+
+        // Copy Link Button Click Handler
+        copyLinkBtn.addEventListener('click', () => {
+            if (!currentLink) {
+                alert('لا يوجد رابط متاح للنسخ');
+                return;
+            }
+            
+            navigator.clipboard.writeText(currentLink).then(() => {
+                alert('تم نسخ الرابط إلى الحافظة');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('فشل نسخ الرابط، يرجى المحاولة يدوياً');
+            });
+        });
+
+        // Initialize connection when page loads if user ID exists
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('telegramUserId')) {
+                telegramUserIdInput.value = localStorage.getItem('telegramUserId');
+            }
+        });
+    </script>
+</body>
+</html>
