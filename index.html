@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق Real-Debrid للويب</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+        }
+        .btn-primary {
+            background-color: #6a5acd;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #5a4bba;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-[#2a2a4a] rounded-xl shadow-xl w-full max-w-2xl p-6">
+        <h1 class="text-3xl font-bold text-center mb-6 text-purple-300">تطبيق Real-Debrid</h1>
+        
+        <div class="mb-6">
+            <label class="block text-gray-400 mb-2">معرف تليجرام الخاص بك:</label>
+            <input id="telegramUserId" type="text" class="w-full bg-gray-700 rounded-lg p-3 mb-3 text-right">
+            <button id="connectBtn" class="btn-primary w-full py-3 rounded-lg font-bold">
+                توصيل بالبوت
+            </button>
+        </div>
+        
+        <div class="mb-6">
+            <label class="block text-gray-400 mb-2">رابط المغناطيس:</label>
+            <textarea id="magnetLink" class="w-full bg-gray-700 rounded-lg p-3 h-24 text-right" placeholder="الصق رابط المغناطيس هنا"></textarea>
+            <p class="text-sm text-gray-500 mt-2">أرسل هذا الرابط إلى بوت التليجرام</p>
+        </div>
+        
+        <div id="status" class="hidden bg-[#3a3a6a] p-4 rounded-lg mb-6">
+            <div class="flex items-center">
+                <div class="w-4 h-4 rounded-full mr-2" id="statusIndicator"></div>
+                <span id="statusText">جاري الاتصال...</span>
+            </div>
+        </div>
+        
+        <div id="result" class="hidden bg-[#3a3a6a] p-4 rounded-lg">
+            <h3 class="text-xl font-bold mb-2" id="resultTitle"></h3>
+            <a id="directLink" href="#" target="_blank" class="break-all block mb-4 text-purple-300 hover:underline"></a>
+            <button id="copyBtn" class="btn-primary py-2 px-4 rounded-lg mr-2">نسخ الرابط</button>
+            <button id="downloadBtn" class="btn-primary py-2 px-4 rounded-lg">تنزيل الملف</button>
+        </div>
+    </div>
+
+    <script>
+        const telegramUserIdInput = document.getElementById('telegramUserId');
+        const connectBtn = document.getElementById('connectBtn');
+        const magnetLink = document.getElementById('magnetLink');
+        const statusDiv = document.getElementById('status');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const resultDiv = document.getElementById('result');
+        const resultTitle = document.getElementById('resultTitle');
+        const directLink = document.getElementById('directLink');
+        const copyBtn = document.getElementById('copyBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        let ws;
+        let currentLink = '';
+
+        // Load saved Telegram ID
+        if (localStorage.getItem('telegramUserId')) {
+            telegramUserIdInput.value = localStorage.getItem('telegramUserId');
+        }
+
+        connectBtn.addEventListener('click', connectWebSocket);
+
+        function connectWebSocket() {
+            const userId = telegramUserIdInput.value.trim();
+            if (!userId) {
+                alert('الرجاء إدخال معرف تليجرام');
+                return;
+            }
+
+            localStorage.setItem('telegramUserId', userId);
+            
+            // استبدل هذا بعنوان السيرفر الصحيح
+            const WS_URL = 'ws://localhost:8765'; // للتجربة المحلية
+            // أو
+            // const WS_URL = 'wss://your-server.com'; // للإنتاج
+            
+            statusDiv.classList.remove('hidden');
+            statusIndicator.style.backgroundColor = 'yellow';
+            statusText.textContent = 'جاري الاتصال...';
+            
+            ws = new WebSocket(WS_URL);
+            
+            ws.onopen = () => {
+                statusIndicator.style.backgroundColor = 'green';
+                statusText.textContent = 'متصل بالبوت';
+                ws.send(JSON.stringify({ type: 'register_user', userId: userId }));
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'direct_link_ready') {
+                    showResult(data.payload);
+                }
+            };
+            
+            ws.onerror = (error) => {
+                statusIndicator.style.backgroundColor = 'red';
+                statusText.textContent = 'خطأ في الاتصال';
+                console.error('WebSocket error:', error);
+            };
+            
+            ws.onclose = () => {
+                statusIndicator.style.backgroundColor = 'red';
+                statusText.textContent = 'تم قطع الاتصال';
+                setTimeout(connectWebSocket, 5000);
+            };
+        }
+
+        function showResult(movie) {
+            resultDiv.classList.remove('hidden');
+            resultTitle.textContent = movie.title;
+            directLink.textContent = movie.directLink;
+            directLink.href = movie.directLink;
+            currentLink = movie.directLink;
+            
+            // Scroll to result
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(currentLink).then(() => {
+                alert('تم نسخ الرابط!');
+            });
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.href = currentLink;
+            link.download = 'download';
+            link.click();
+        });
+    </script>
+</body>
+</html>
