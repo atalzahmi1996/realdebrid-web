@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق Real-Debrid للويب</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for 'Inter' -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for dark mode and Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a2e; /* Dark background */
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 0;
+            box-sizing: border-box;
+            overflow: hidden; /* Prevent body scroll, content will scroll */
+        }
+        /* Main app container to hold everything and enable full height */
+        .app-container {
+            background-color: #2a2a4a; /* Slightly lighter dark for container */
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            max-width: 800px;
+            width: 100%;
+            height: 98vh; /* Take full viewport height, adjust for aesthetic margins if needed */
+            margin: 1vh auto;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #4a4a7a;
+            overflow: hidden; /* Contain content inside */
+        }
+        /* Header styling */
+        .app-header {
+            padding: 20px 40px;
+            text-align: center;
+            border-bottom: 1px solid #4a4a7a;
+        }
+        /* Content display area - takes available space and allows scrolling */
+        #contentDisplayArea {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px 40px;
+        }
+
+        /* Style for headings */
+        h1 {
+            color: #9d8fe6; /* Purple accent for headings */
+        }
+        /* Style for buttons with hover effect */
+        .btn-primary {
+            background-color: #6a5acd; /* Purple button */
+            color: white;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .btn-primary:hover {
+            background-color: #5a4bba;
+            transform: translateY(-2px);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: translateY(0);
+        }
+        /* Style for loading spinner */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #6a5acd;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        /* Small spinner for button */
+        .spinner-small {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid #fff;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Style for messages (success, error) */
+        .message {
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .message-success {
+            background-color: #28a74533; /* Green with transparency */
+            color: #28a745;
+        }
+        .message-error {
+            background-color: #dc354533; /* Red with transparency */
+            color: #dc3545;
+        }
+        .message-info {
+            background-color: #007bff33; /* Blue with transparency */
+            color: #007bff;
+        }
+
+        /* Movie card specific styles */
+        .movie-card {
+            background-color: #3a3a6a;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .movie-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        }
+        .movie-card img {
+            width: 100%;
+            height: 200px; /* Fixed height for image */
+            object-fit: cover; /* Ensures image covers area without distorting */
+        }
+        .movie-card-title {
+            color: #e0e0e0;
+            font-weight: 600;
+            padding: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Search result card styles */
+        .search-result-card {
+            background-color: #3a3a6a;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            text-align: right;
+        }
+        .search-result-card img {
+            width: 60px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-left: 10px; /* Adjust margin for RTL */
+        }
+        .search-result-info {
+            flex-grow: 1;
+            margin-right: 10px; /* Add margin to separate info from button */
+        }
+        .search-result-title {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #e0e0e0;
+        }
+        .search-result-details {
+            font-size: 0.9em;
+            color: #b0b0b0;
+            margin-top: 2px;
+        }
+        .search-result-btn {
+            background-color: #4CAF50; /* Green for add */
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            white-space: nowrap;
+        }
+        .search-result-btn:hover {
+            background-color: #45a049;
+        }
+
+        /* Navigation Bar styles */
+        #navBar {
+            background-color: #1a1a2e;
+            padding: 10px 0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #4a4a7a;
+            width: 100%;
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+        }
+        .nav-btn {
+            flex: 1;
+            text-align: center;
+            background: none;
+            border: none;
+            color: #e0e0e0;
+            cursor: pointer;
+            padding: 10px 5px;
+            transition: color 0.3s ease, background-color 0.3s ease;
+            border-radius: 8px;
+        }
+        .nav-btn:hover {
+            color: #9d8fe6;
+            background-color: #3a3a6a;
+        }
+        .nav-btn.active {
+            color: #9d8fe6;
+            background-color: #3a3a6a;
+        }
+        .nav-btn svg {
+            margin-bottom: 4px;
+            height: 24px;
+            width: 24px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .nav-btn span {
+            font-size: 0.75em;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* Specific styles for tab content */
+        .tab-content {
+            padding-bottom: 20px;
+        }
+
+        /* Detail Page specific styles */
+        #movieDetailPage {
+            transition: all 0.3s ease;
+        }
+
+        #movieDetailPage .container {
+            position: relative;
+            padding-top: 60px;
+        }
+
+        #closeDetailBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px; /* Adjusted for RTL */
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 2.5rem;
+            line-height: 1;
+            padding: 5px 10px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.3);
+            transition: background-color 0.2s;
+            z-index: 60;
+        }
+        #closeDetailBtn:hover {
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+
+        /* Responsive adjustments for detail page */
+        @media (max-width: 768px) {
+            #movieDetailPage .flex {
+                flex-direction: column;
+            }
+            #detailPoster {
+                width: 100% !important;
+                height: auto;
+                max-height: 400px;
+            }
+            #movieDetailPage .container {
+                padding-top: 80px;
+            }
+        }
+        /* Download Button specific style */
+        #downloadBtn {
+            background-color: #8B5CF6;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        #downloadBtn:hover {
+            background-color: #7C3AED;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="app-container">
+        <div class="app-header">
+            <h1 class="text-3xl font-bold">تطبيق Real-Debrid للويب</h1>
+        </div>
+
+        <!-- Main Content Area (Tabbed View - Always visible) -->
+        <div id="mainAppContent" class="flex-grow flex flex-col">
+            <div id="contentDisplayArea">
+                <!-- Dashboard Tab Content -->
+                <div id="dashboardTab" class="tab-content">
+                    <div class="mt-4 border-b border-gray-700 pb-8 mb-8">
+                        <h2 class="text-2xl font-bold mb-6 text-center text-purple-300">بحث عن الأفلام والمسلسلات</h2>
+                        <p class="text-gray-500 text-sm mb-4 text-center">
+                            (هذه الميزة تعرض نتائج البحث فقط. لإضافة فيلم، أرسل رابط المغناطيس مباشرة إلى بوت التليجرام.)
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-3 mb-6">
+                            <input type="text" id="searchInput" placeholder="ابحث عن فيلم أو مسلسل..."
+                                   class="shadow appearance-none border border-gray-600 rounded-lg w-full py-3 px-4 text-gray-100 leading-tight bg-gray-700 focus:shadow-outline text-right flex-grow">
+                            <select id="searchType" class="bg-gray-700 border border-gray-600 rounded-lg px-3 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="multi">الكل</option>
+                                <option value="movie">أفلام فقط</option>
+                                <option value="tv">مسلسلات فقط</option>
+                            </select>
+                            <button id="searchBtn"
+                                    class="btn-primary py-3 px-6 rounded-lg font-bold text-lg focus:outline-none focus:shadow-outline sm:w-auto">
+                                بحث
+                            </button>
+                        </div>
+                        <div id="searchResultsList" class="mb-6">
+                            <!-- Search results will be injected here -->
+                        </div>
+                        <p id="noSearchResultsMessage" class="text-gray-500 text-center hidden">لا توجد نتائج بحث. يرجى تجربة كلمات أخرى.</p>
+                    </div>
+
+                    <h2 class="text-2xl font-bold mb-6 text-center mt-10 border-b border-gray-700 pb-8">الحصول على رابط مباشر من المغناطيس</h2>
+
+                    <div class="mb-4">
+                        <p class="text-gray-400 text-center mb-4">
+                            يرجى إرسال رابط المغناطيس مباشرة إلى بوت التليجرام الخاص بك:
+                            <a href="https://t.me/myrd_converter_bot" target="_blank" class="text-purple-400 hover:underline">@myrd_converter_bot</a>
+                            وسيقوم البوت بإرسال الرابط المباشر إلى هنا تلقائياً.
+                        </p>
+                        <label for="magnetLinkInput" class="block text-gray-400 text-sm font-bold mb-2">رابط المغناطيس (Magnet Link):</label>
+                        <textarea id="magnetLinkInput" rows="4" placeholder="الصق رابط المغناطيس هنا إذا أردت نسخه بسهولة للبوت..."
+                                  class="shadow appearance-none border border-gray-600 rounded-lg w-full py-3 px-4 text-gray-100 leading-tight bg-gray-700 focus:shadow-outline resize-y text-right" readonly></textarea>
+                    </div>
+
+                    <button id="addMagnetBtn"
+                            class="btn-primary w-full py-3 px-4 rounded-lg font-bold text-lg focus:outline-none focus:shadow-outline">
+                        (غير مفعل) إرسال المغناطيس إلى البوت
+                    </button>
+
+                    <!-- Loading Indicator -->
+                    <div id="loadingIndicator" class="hidden flex justify-center items-center mt-6">
+                        <div class="spinner"></div>
+                        <p class="text-gray-400 mr-4">جاري المعالجة... يرجى الانتظار.</p>
+                    </div>
+
+                    <!-- Messages Area for magnet/processing -->
+                    <div id="magnetMessageArea" class="mt-6"></div>
+
+                    <!-- Direct Link Display Area -->
+                    <div id="directLinkArea" class="hidden mt-8 text-center bg-[#3a3a6a] p-6 rounded-lg shadow-inner">
+                        <!-- Content will be dynamically inserted here by displayMovieDirectLink -->
+                        <div class="flex flex-wrap justify-center gap-2">
+                            <button id="copyLinkBtnDynamic"
+                                    class="btn-primary flex-1 py-2 px-6 rounded-lg font-bold text-md focus:outline-none focus:shadow-outline mx-1 mb-2 sm:mb-0">
+                                نسخ الرابط
+                            </button>
+                            <button id="addMovieToLibraryBtnDynamic"
+                                    class="btn-primary flex-1 py-2 px-6 rounded-lg font-bold text-md focus:outline-none focus:shadow-outline mx-1 mb-2 sm:mb-0">
+                                إضافة إلى المكتبة
+                            </button>
+                            <button id="downloadStrmBtnDynamic"
+                                    class="btn-primary flex-1 py-2 px-6 rounded-lg font-bold text-md focus:outline-none focus:shadow-outline mx-1">
+                                تنزيل ملف STREM
+                            </button>
+                        </div>
+                        <p class="text-gray-500 text-xs mt-2">
+                            انقر على الرابط أعلاه لتشغيله في متصفحك أو استخدم زر "نسخ الرابط" للصقه في مشغل الفيديو المفضل لديك. يمكنك أيضاً تنزيل ملف STREM للاستخدام مع Kodi أو مشغلات أخرى.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Movies Tab Content -->
+                <div id="moviesTab" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold mb-6 text-center text-purple-300">مكتبة الأفلام المحلية</h2>
+                    <div id="movieList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        <!-- Movies will be injected here -->
+                    </div>
+                    <p id="noMoviesMessage" class="text-gray-500 text-center mt-4">لا توجد أفلام في مكتبتك بعد.</p>
+                </div>
+
+                <!-- Series Tab Content -->
+                <div id="seriesTab" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold mb-6 text-center text-purple-300">قسم المسلسلات</h2>
+                    <p class="text-gray-400 text-center">هذا القسم قيد الإنشاء. سيتم عرض المسلسلات هنا.</p>
+                </div>
+
+                <!-- Settings Tab Content -->
+                <div id="settingsTab" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold mb-6 text-center text-purple-300">الإعدادات</h2>
+                    <div class="mb-6">
+                        <label for="settingsTelegramUserIdInput" class="block text-gray-400 text-sm font-bold mb-2">معرف تليجرام الخاص بك (Telegram User ID):</label>
+                        <input type="text" id="settingsTelegramUserIdInput" placeholder="ادخل معرف تليجرام الخاص بك هنا"
+                               class="shadow appearance-none border border-gray-600 rounded-lg w-full py-3 px-4 text-gray-100 leading-tight bg-gray-700 focus:shadow-outline mb-3 text-right">
+                        <button id="updateTelegramUserIdBtn" class="btn-primary w-full py-3 px-4 rounded-lg font-bold text-lg focus:outline-none focus:shadow-outline">
+                            تحديث معرف تليجرام
+                        </button>
+                    </div>
+                    <button id="clearDataBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline w-full">
+                        مسح البيانات المحلية
+                    </button>
+                    <p class="text-gray-500 text-xs mt-3 text-center">
+                        (سيؤدي هذا إلى مسح معرف تليجرام وقائمة الأفلام المخزنة محليًا.)
+                    </p>
+                </div>
+            </div>
+
+            <!-- Navigation Bar -->
+            <div id="navBar">
+                <button class="nav-btn active" data-tab="dashboard">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m0 0l-7 7m7-7v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    <span class="text-xs">لوحة التحكم</span>
+                </button>
+                <button class="nav-btn" data-tab="movies">
+                    <svg xmlns="http://www.w3.org/2000/2000/svg" class="h-6 w-6 mx-auto mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M4 8h16M4 12h16M4 16h16" />
+                    </svg>
+                    <span class="text-xs">أفلام</span>
+                </button>
+                <button class="nav-btn" data-tab="series">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                     </svg>
+                    <span class="text-xs">مسلسلات</span>
+                </button>
+                <button class="nav-btn" data-tab="settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.398 2.572-1.065z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="text-xs">إعدادات</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Movie Detail Page (Initially Hidden) -->
+        <div id="movieDetailPage" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 overflow-auto flex justify-center items-center p-4">
+            <div class="container mx-auto p-4 max-w-4xl bg-[#2a2a4a] rounded-lg shadow-xl relative text-right">
+                <button id="closeDetailBtn" class="text-white absolute top-4 right-4 text-2xl mb-4 leading-none" aria-label="إغلاق التفاصيل">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <div id="detailContentContainer" class="relative">
+                     <!-- Loading Skeleton -->
+                    <div id="detailLoadingSkeleton" class="absolute inset-0 flex items-center justify-center bg-[#2a2a4a] z-10 hidden">
+                        <div class="spinner"></div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <img id="detailPoster" src="" alt="بوستر الفيلم" class="w-full md:w-1/3 rounded-lg shadow-lg object-cover h-auto max-h-[400px] md:max-h-full" onerror="this.onerror=null; this.src='https://placehold.co/300x450/4a4a7a/e0e0e0?text=${encodeURIComponent("لا توجد صورة")}'" loading="lazy">
+                        <div class="text-white flex-1">
+                            <h2 id="detailTitle" class="text-3xl font-bold mb-2"></h2>
+                            <div id="detailMeta" class="flex gap-4 my-2 text-gray-300 items-center justify-end md:justify-start">
+                                <!-- Year and Rating will be injected here -->
+                            </div>
+                            <p id="detailOverview" class="my-4 text-justify"></p>
+                            
+                            <div class="flex flex-wrap gap-3 mt-6 justify-end">
+                                <button id="playBtn" class="bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg font-bold">
+                                    تشغيل
+                                </button>
+                                <button id="playExternalBtn" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg font-bold">
+                                    فتح بمشغل خارجي
+                                </button>
+                                <button id="deleteBtn" class="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg font-bold">
+                                    حذف من المكتبة
+                                </button>
+                                <button id="downloadBtn" class="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-lg font-bold">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline ml-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                    تنزيل
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- WebSocket Configuration ---
+        // IMPORTANT: Replace 'YOUR_BOT_PUBLIC_IP' with the actual public IP address
+        // or domain name of the server running your Python bot.
+        // If testing locally, use 'localhost'.
+        const WS_URL = 'ws://YOUR_BOT_PUBLIC_IP:8765'; // Example: 'ws://192.168.1.100:8765' or 'ws://your-domain.com:8765'
+
+        let ws; // WebSocket instance
+
+        // --- UI Element References ---
+        const magnetLinkInput = document.getElementById('magnetLinkInput');
+        const addMagnetBtn = document.getElementById('addMagnetBtn'); // This button is now disabled/informative
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const magnetMessageArea = document.getElementById('magnetMessageArea');
+        const directLinkArea = document.getElementById('directLinkArea');
+        const movieList = document.getElementById('movieList');
+        const noMoviesMessage = document.getElementById('noMoviesMessage');
+
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const searchResultsList = document.getElementById('searchResultsList');
+        const noSearchResultsMessage = document.getElementById('noSearchResultsMessage');
+        const searchTypeSelect = document.getElementById('searchType');
+
+        const dashboardTab = document.getElementById('dashboardTab');
+        const moviesTab = document.getElementById('moviesTab');
+        const seriesTab = document.getElementById('seriesTab');
+        const settingsTab = document.getElementById('settingsTab');
+        const navButtons = document.querySelectorAll('.nav-btn');
+
+        const settingsTelegramUserIdInput = document.getElementById('settingsTelegramUserIdInput'); // Changed ID
+        const updateTelegramUserIdBtn = document.getElementById('updateTelegramUserIdBtn'); // Changed ID
+        const clearDataBtn = document.getElementById('clearDataBtn');
+
+        const movieDetailPage = document.getElementById('movieDetailPage');
+        const closeDetailBtn = document.getElementById('closeDetailBtn');
+        const detailPoster = document.getElementById('detailPoster');
+        const detailTitle = document.getElementById('detailTitle');
+        const detailMeta = document.getElementById('detailMeta');
+        const detailOverview = document.getElementById('detailOverview');
+        const playBtn = document.getElementById('playBtn');
+        const playExternalBtn = document.getElementById('playExternalBtn');
+        const deleteBtn = document.getElementById('deleteBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const detailLoadingSkeleton = document.getElementById('detailLoadingSkeleton');
+
+        // --- Variables ---
+        let telegramUserId = ''; // Stores the user's Telegram ID
+        const TMDB_API_KEY = '47b972fb486f4c35b33845e1a39359e0'; // Still needed for client-side TMDB search display
+        const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
+
+        let myMovies = [];
+        let currentProcessedMovie = null; // Stores the last processed movie details
+
+        // --- Utility Functions ---
+
+        /**
+         * Saves the current application state (Telegram User ID, movies) to localStorage.
+         */
+        function saveState() {
+            localStorage.setItem('telegramUserId', telegramUserId); // Save Telegram User ID
+            localStorage.setItem('myMovies', JSON.stringify(myMovies));
+            console.log('State saved:', { telegramUserId, myMovies });
+        }
+
+        /**
+         * Loads the application state (Telegram User ID, movies) from localStorage.
+         */
+        function loadState() {
+            telegramUserId = localStorage.getItem('telegramUserId') || ''; // Load Telegram User ID
+            const storedMovies = localStorage.getItem('myMovies');
+            if (storedMovies) {
+                try {
+                    myMovies = JSON.parse(storedMovies);
+                } catch (e) {
+                    console.error("Error parsing stored movies:", e);
+                    myMovies = [];
+                }
+            } else {
+                myMovies = [];
+            }
+            console.log('State loaded:', { telegramUserId, myMovies });
+            settingsTelegramUserIdInput.value = telegramUserId; // Update settings input field
+        }
+
+        /**
+         * Displays a message to the user in a styled box.
+         * @param {string} message The message text.
+         * @param {'success'|'error'|'info'} type The type of message (determines color).
+         * @param {HTMLElement} targetArea The HTML element where the message should be displayed.
+         */
+        function showMessage(message, type, targetArea) {
+            targetArea.innerHTML = `<div class="message message-${type}">${message}</div>`;
+            targetArea.classList.remove('hidden');
+            setTimeout(() => {
+                clearMessage(targetArea);
+            }, 5000);
+        }
+
+        /**
+         * Clears any displayed messages.
+         * @param {HTMLElement} targetArea The HTML element from which the message should be cleared.
+         */
+        function clearMessage(targetArea) {
+            targetArea.innerHTML = '';
+            targetArea.classList.add('hidden');
+        }
+
+        /**
+         * Shows or hides the global loading spinner.
+         * @param {boolean} show True to show, false to hide.
+         */
+        function showLoading(show) {
+            if (show) {
+                loadingIndicator.classList.remove('hidden');
+            } else {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Sets the loading state for the addMagnetBtn specifically (now only informative).
+         * @param {boolean} isLoading True to show loading, false to revert.
+         */
+        function setLoadingState(isLoading) {
+            if (isLoading) {
+                addMagnetBtn.disabled = true;
+                addMagnetBtn.innerHTML = `
+                    <span class="flex items-center justify-center">
+                        <span class="spinner-small ml-2"></span>
+                        جاري الاتصال بالبوت...
+                    </span>
+                `;
+            } else {
+                addMagnetBtn.disabled = false;
+                addMagnetBtn.textContent = '(غير مفعل) إرسال المغناطيس إلى البوت';
+            }
+        }
+
+        /**
+         * Shows a specific tab content and hides others.
+         * @param {string} tabName The name of the tab to show (e.g., 'dashboard', 'movies', 'series', 'settings').
+         */
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tabContent => {
+                tabContent.classList.add('hidden');
+            });
+            document.getElementById(tabName + 'Tab').classList.remove('hidden');
+            navButtons.forEach(button => {
+                if (button.dataset.tab === tabName) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+            clearMessage(magnetMessageArea);
+            clearMessage(apiKeyMessageArea); // Clear old API key messages
+            directLinkArea.classList.add('hidden');
+            searchResultsList.innerHTML = '';
+            noSearchResultsMessage.classList.add('hidden');
+            
+            if (tabName === 'movies') {
+                renderMovies();
+            } else if (tabName === 'dashboard') {
+                searchInput.value = '';
+                magnetLinkInput.value = ''; // Clear magnet input
+            } else if (tabName === 'settings') {
+                settingsTelegramUserIdInput.value = telegramUserId; // Ensure settings input shows current ID
+            }
+        }
+
+        /**
+         * Renders the movies stored in myMovies array into the UI (local library).
+         */
+        function renderMovies() {
+            console.log("Rendering movies. Current myMovies:", myMovies);
+            movieList.innerHTML = '';
+            if (myMovies.length === 0) {
+                noMoviesMessage.classList.remove('hidden');
+                console.log("No movies in library, showing noMoviesMessage.");
+            } else {
+                noMoviesMessage.classList.add('hidden');
+                console.log("Movies in library, hiding noMoviesMessage and rendering cards.");
+                const sortedMovies = [...myMovies].sort((a, b) => a.title.localeCompare(b.title));
+                sortedMovies.forEach(movie => {
+                    const movieCard = document.createElement('div');
+                    movieCard.className = 'movie-card';
+                    const imageUrl = movie.poster && movie.poster !== 'N/A' ? movie.poster : `https://placehold.co/300x450/4a4a7a/e0e0e0?text=${encodeURIComponent("فيلم/مسلسل")}`;
+                    movieCard.innerHTML = `
+                        <img src="${imageUrl}" alt="${movie.title}" class="rounded-t-lg" loading="lazy" onerror="this.onerror=null; this.src='https://placehold.co/300x450/4a4a7a/e0e0e0?text=${encodeURIComponent("لا توجد صورة")}}';">
+                        <div class="movie-card-title">${movie.title}</div>
+                    `;
+                    movieCard.addEventListener('click', () => {
+                        loadMovieDetails(movie.id, movie.mediaType || 'movie');
+                    });
+                    movieList.appendChild(movieCard);
+                });
+            }
+        }
+
+        /**
+         * Displays the direct link information for a given movie object in the dashboard section.
+         * This function is called when a direct link is received from the Telegram bot.
+         * @param {object} movie The movie object containing title, link, etc.
+         */
+        function displayMovieDirectLink(movie) {
+            if (!movie || !movie.directLink || movie.directLink === '#') {
+                showMessage('خطأ: لا يوجد رابط مباشر لعرضه.', 'error', magnetMessageArea);
+                directLinkArea.classList.add('hidden');
+                return;
+            }
+            
+            currentProcessedMovie = movie; // Set current processed movie for actions like add to library
+            
+            directLinkArea.innerHTML = `
+                <h3 class="text-xl font-bold mb-2 text-purple-400">${movie.title}</h3>
+                <div class="flex items-center justify-center mb-3 text-gray-300">
+                    ${movie.rating && movie.rating !== 'N/A' ? `
+                    <span class="bg-yellow-500 text-black text-sm px-2 py-1 rounded mr-2 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.538 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.783.57-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.92 8.72c-.783-.57-.381-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z" />
+                        </svg>
+                        ${movie.rating}/10
+                    </span>` : ''}
+                    ${movie.releaseYear && movie.releaseYear !== 'N/A' ? `<span>${movie.releaseYear}</span>` : ''}
+                </div>
+                <p class="my-4 text-justify">${movie.overview}</p>
+                <a id="dashboardMovieLink" href="${movie.directLink}" target="_blank"
+                   class="block text-lg break-all p-3 rounded-lg bg-gray-700 text-purple-300 hover:text-purple-200 hover:underline transition mb-4">
+                    ${movie.directLink}
+                </a>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <button id="copyLinkBtnDynamic"
+                            class="btn-primary flex-1 py-2 px-6 rounded-lg font-bold text-md focus:outline-none focus:shadow-outline mx-1 mb-2 sm:mb-0">
+                        نسخ الرابط
+                    </button>
+                    <button id="addMovieToLibraryBtnDynamic"
+                            class="btn-primary flex-1 py-2 px-6 rounded-lg font-bold text-md focus:outline-none focus:shadow-outline mx-1 mb-2 sm:mb-0">
+                        إضافة إلى المكتبة
+                    </button>
+                    <button id="downloadStrmBtnDynamic"
+                            class="btn-primary flex-1 py-2 px-6 rounded-lg font-bold text-md focus:outline-none focus:shadow-outline mx-1">
+                        تنزيل ملف STREM
+                    </button>
+                </div>
+                <p class="text-gray-500 text-xs mt-2">
+                    انقر على الرابط أعلاه لتشغيله في متصفحك أو استخدم زر "نسخ الرابط" للصقه في مشغل الفيديو المفضل لديك. يمكنك أيضاً تنزيل ملف STREM للاستخدام مع Kodi أو مشغلات أخرى.
+                </p>
+            `;
+            
+            directLinkArea.classList.remove('hidden');
+            // Re-attach event listeners for the buttons within the directLinkArea
+            document.getElementById('copyLinkBtnDynamic').onclick = copyLinkBtnClick;
+            document.getElementById('addMovieToLibraryBtnDynamic').onclick = addMovieToLibraryBtnClick;
+            document.getElementById('downloadStrmBtnDynamic').onclick = downloadStrmBtnClick;
+
+            const existsInLibrary = myMovies.some(m => m.id === movie.id);
+            if (existsInLibrary) {
+                document.getElementById('addMovieToLibraryBtnDynamic').classList.add('hidden');
+            } else {
+                document.getElementById('addMovieToLibraryBtnDynamic').classList.remove('hidden');
+            }
+            directLinkArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+
+        /**
+         * Fetches detailed information for a movie/TV show from TMDB (client-side only for display info).
+         * @param {number} tmdbId The TMDB ID of the item.
+         * @param {string} mediaType 'movie' or 'tv'.
+         * @returns {Promise<object|null>} Promise that resolves with detailed TMDB data or null on error.
+         */
+        async function fetchMovieDetails(tmdbId, mediaType) {
+            try {
+                const response = await fetch(
+                    `https://api.themoviedb.org/3/${mediaType}/${tmdbId}?api_key=${TMDB_API_KEY}&language=ar`
+                );
+                if (!response.ok) {
+                    console.error(`TMDB fetch details error: ${response.status}`);
+                    return null;
+                }
+                
+                const data = await response.json();
+                return {
+                    id: `${mediaType}-${data.id}`,
+                    title: data.title || data.name,
+                    poster: data.poster_path ? TMDB_IMAGE_BASE_URL + data.poster_path : `https://placehold.co/300x450/4a4a7a/e0e0e0?text=${encodeURIComponent("لا توجد صورة")}`,
+                    releaseYear: (data.release_date || data.first_air_date) ? new Date(data.release_date || data.first_air_date).getFullYear() : 'N/A',
+                    overview: data.overview || 'لا يوجد وصف متاح.',
+                    mediaType: mediaType,
+                    rating: data.vote_average ? data.vote_average.toFixed(1) : 'N/A',
+                    // Note: directLink is NOT fetched here; it comes from the bot
+                    directLink: '#' // Placeholder, actual link comes from bot
+                };
+            } catch (error) {
+                console.error("Error fetching movie details from TMDB:", error);
+                return null;
+            }
+        }
+
+
+        /**
+         * Shows the detailed movie page.
+         * @param {object} movie The movie object with full details.
+         */
+        function showMovieDetail(movie) {
+            detailPoster.src = movie.poster;
+            detailTitle.textContent = movie.title;
+            detailOverview.textContent = movie.overview;
+            
+            detailMeta.innerHTML = `
+                ${movie.rating && movie.rating !== 'N/A' ? `
+                <span class="bg-yellow-500 text-black text-sm px-2 py-1 rounded ml-2 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.538 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.783.57-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.92 8.72c-.783-.57-.381-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z" />
+                    </svg>
+                    ${movie.rating}/10
+                </span>` : ''}
+                ${movie.releaseYear && movie.releaseYear !== 'N/A' ? `<span>${movie.releaseYear}</span>` : ''}
+            `;
+            
+            movieDetailPage.classList.remove('hidden');
+            playBtn.onclick = () => playMovie(movie);
+            playExternalBtn.onclick = () => playExternally(movie);
+            deleteBtn.onclick = () => deleteMovie(movie.id);
+            downloadBtn.onclick = () => downloadMovie(movie);
+            
+            const existsInLibrary = myMovies.some(m => m.id === movie.id);
+            if (existsInLibrary) {
+                deleteBtn.classList.remove('hidden');
+            } else {
+                deleteBtn.classList.add('hidden');
+            }
+
+            movieDetailPage.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        closeDetailBtn.onclick = () => {
+            movieDetailPage.classList.add('hidden');
+        };
+
+        /**
+         * Loads movie details and displays them in the detail page.
+         * @param {string} id The unique ID of the movie (e.g., 'tmdb-123', 'magnet-abc').
+         * @param {string} mediaType 'movie' or 'tv'.
+         */
+        async function loadMovieDetails(id, mediaType) {
+            detailLoadingSkeleton.classList.remove('hidden');
+            movieDetailPage.classList.remove('hidden');
+
+            try {
+                let movieData = myMovies.find(m => m.id === id);
+
+                // If not found or details are incomplete, fetch from TMDB
+                // Note: The directLink part will NOT be filled by TMDB, it must come from the bot
+                if (!movieData || !movieData.overview || !movieData.poster || movieData.poster === 'N/A') {
+                    const tmdbId = id.startsWith('tmdb-') ? id.substring(5) : id.startsWith('tv-') ? id.substring(3) : id;
+                    const fetchedDetails = await fetchMovieDetails(tmdbId, mediaType);
+                    if (fetchedDetails) {
+                        // Preserve directLink if it exists from previous bot push
+                        movieData = { ...fetchedDetails, directLink: movieData?.directLink || '#' }; 
+                    } else {
+                        throw new Error("Could not fetch full movie details from TMDB.");
+                    }
+                }
+                
+                if (movieData) {
+                    showMovieDetail(movieData);
+                } else {
+                    showMessage('فشل تحميل تفاصيل الفيلم.', 'error', magnetMessageArea);
+                    movieDetailPage.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error("Load movie details error:", error);
+                showMessage(`خطأ في تحميل تفاصيل الفيلم: ${error.message}`, 'error', magnetMessageArea);
+                movieDetailPage.classList.add('hidden');
+            } finally {
+                detailLoadingSkeleton.classList.add('hidden');
+            }
+        }
+
+
+        /**
+         * Plays the movie using its direct link.
+         * @param {object} movie The movie object.
+         */
+        function playMovie(movie) {
+            if (movie.directLink && movie.directLink !== '#') {
+                window.open(movie.directLink, '_blank');
+            } else {
+                showMessage('لا يوجد رابط تشغيل متاح لهذا الفيلم. يرجى معالجة المغناطيس أولاً عبر بوت التليجرام.', 'info', magnetMessageArea);
+            }
+        }
+
+        /**
+         * Opens the movie's direct link in an external player (simulated for demo).
+         * @param {object} movie The movie object.
+         */
+        function playExternally(movie) {
+            if (movie.directLink && movie.directLink !== '#') {
+                const streamUrl = movie.directLink;
+                if (navigator.userAgent.match(/Android/i)) {
+                    window.open(`intent:${streamUrl}#Intent;package=org.videolan.vlc;end`, '_self');
+                    showMessage('محاولة فتح الفيلم في VLC. تأكد من تثبيت VLC.', 'info', magnetMessageArea);
+                } 
+                else if (navigator.userAgent.match(/Windows|Mac|Linux/i)) {
+                    window.open(`vlc://${encodeURIComponent(streamUrl)}`, '_self');
+                    showMessage('محاولة فتح الفيلم في VLC. قد تحتاج إلى تثبيت VLC وتكوين بروتوكولاته.', 'info', magnetMessageArea);
+                } else {
+                    window.open(streamUrl, '_blank');
+                    showMessage('تم فتح الرابط في علامة تبويب جديدة. قد لا يدعم جهازك التشغيل الخارجي المباشر.', 'info', magnetMessageArea);
+                }
+            } else {
+                showMessage('لا يوجد رابط تشغيل متاح لفتحه بمشغل خارجي. يرجى معالجة المغناطيس أولاً عبر بوت التليجرام.', 'info', magnetMessageArea);
+            }
+        }
+
+        /**
+         * Initiates a download for the movie's direct link.
+         * @param {object} movie The movie object.
+         */
+        function downloadMovie(movie) {
+            if (movie.directLink && movie.directLink !== '#') {
+                const link = document.createElement('a');
+                link.href = movie.directLink;
+                link.download = `${movie.title.replace(/[^\w\s-.]/g, '').replace(/\s+/g, '_')}.mp4`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showMessage('بدأ التنزيل...', 'info', magnetMessageArea);
+            } else {
+                showMessage('لا يوجد رابط تنزيل متاح. يرجى معالجة المغناطيس أولاً عبر بوت التليجرام.', 'error', magnetMessageArea);
+            }
+        }
+
+        /**
+         * Deletes a movie from the local library.
+         * @param {string} movieId The ID of the movie to delete.
+         */
+        function deleteMovie(movieId) {
+            const initialLength = myMovies.length;
+            myMovies = myMovies.filter(movie => movie.id !== movieId);
+            if (myMovies.length < initialLength) {
+                saveState();
+                renderMovies();
+                closeDetailBtn.click();
+                showMessage('تم حذف الفيلم من مكتبتك بنجاح!', 'success', magnetMessageArea);
+            } else {
+                showMessage('لم يتم العثور على الفيلم لحذفه.', 'error', magnetMessageArea);
+            }
+        }
+
+
+        /**
+         * Real TMDB API search call (client-side for display only)
+         * @param {string} query The search query
+         * @param {string} type The media type ('movie', 'tv', 'multi')
+         * @returns {Promise<Array<Object>>} Promise that resolves with TMDB search results
+         */
+        async function searchTmdb(query, type = 'multi') {
+            if (!query) return [];
+            try {
+                const response = await fetch(
+                    `https://api.themoviedb.org/3/search/${type}?api_key=${TMDB_API_KEY}&language=ar&query=${encodeURIComponent(query)}`
+                );
+                if (!response.ok) {
+                    throw new Error(`TMDB API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return data.results.map(item => ({
+                    id: item.id,
+                    title: item.title || item.name,
+                    releaseYear: (item.release_date || item.first_air_date) ? new Date(item.release_date || item.first_air_date).getFullYear() : 'N/A',
+                    imageUrl: item.poster_path ? TMDB_IMAGE_BASE_URL + item.poster_path : 'N/A',
+                    overview: item.overview || 'لا يوجد وصف',
+                    mediaType: item.media_type,
+                    rating: item.vote_average ? item.vote_average.toFixed(1) : 'N/A'
+                })).filter(item => item.title);
+            } catch (error) {
+                console.error("TMDB search error:", error);
+                return [];
+            }
+        }
+
+        // --- WebSocket Connection ---
+        function connectWebSocket() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                console.log("WebSocket already open.");
+                return;
+            }
+            if (!telegramUserId) {
+                console.log("Telegram User ID not set. Cannot establish WebSocket.");
+                showMessage("الرجاء إدخال معرف تليجرام الخاص بك في الإعدادات لربط التطبيق.", 'info', magnetMessageArea);
+                return;
+            }
+
+            console.log(`Attempting to connect WebSocket to ${WS_URL}`);
+            ws = new WebSocket(WS_URL);
+
+            ws.onopen = () => {
+                console.log('WebSocket connection established.');
+                showMessage('تم الاتصال ببوت التليجرام بنجاح!', 'success', magnetMessageArea);
+                // Register the user ID with the bot
+                ws.send(JSON.stringify({ type: 'register_user', userId: telegramUserId }));
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log('Received WebSocket message:', data);
+
+                if (data.type === 'direct_link_ready') {
+                    const movieData = data.payload;
+                    displayMovieDirectLink(movieData);
+                    showMessage('تم استلام الرابط المباشر من التليجرام!', 'success', magnetMessageArea);
+                    showTab('dashboard'); // Switch to dashboard to show the result
+                } else if (data.type === 'registration_success') {
+                    showMessage('تم تسجيل التطبيق مع بوت التليجرام بنجاح!', 'info', magnetMessageArea);
+                }
+                // Handle other message types from bot if any
+            };
+
+            ws.onclose = (event) => {
+                console.log('WebSocket connection closed:', event.code, event.reason);
+                showMessage('تم قطع الاتصال ببوت التليجرام. محاولة إعادة الاتصال...', 'error', magnetMessageArea);
+                // Attempt to reconnect after a delay
+                setTimeout(connectWebSocket, 5000);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                showMessage('خطأ في الاتصال ببوت التليجرام. تأكد من أن البوت يعمل وأن المنفذ مفتوح.', 'error', magnetMessageArea);
+                ws.close(); // Close the faulty connection to trigger onclose and reconnect
+            };
+        }
+
+
+        // --- Event Listeners and Core Logic ---
+
+        // On document load, load state, show main app directly, and try to connect WebSocket
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState(); // Load user ID and movies from localStorage
+            showTab('dashboard'); // Default to dashboard tab
+
+            // Initial WebSocket connection attempt
+            // connectWebSocket(); // Call after loadState() to ensure telegramUserId is loaded
+        });
+
+        // Reconnect WebSocket if user ID is set and it's not connected on navigation to dashboard
+        document.getElementById('navBar').addEventListener('click', (event) => {
+            const button = event.target.closest('.nav-btn');
+            if (button && button.dataset.tab === 'dashboard') {
+                if (telegramUserId && (!ws || ws.readyState !== WebSocket.OPEN)) {
+                    connectWebSocket(); // Try to connect if dashboard is active and not connected
+                }
+            }
+        });
+        // Initial connection when app loads the first time
+        window.addEventListener('load', () => {
+            if (telegramUserId) { // Only try to connect if a Telegram User ID is set
+                 connectWebSocket();
+            } else {
+                showMessage("الرجاء إدخال معرف تليجرام الخاص بك في الإعدادات لربط التطبيق ببوت التليجرام.", 'info', magnetMessageArea);
+            }
+        });
+
+
+        // Event listener for navigation buttons
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabName = button.dataset.tab;
+                showTab(tabName);
+            });
+        });
+
+        // Update Telegram User ID button logic in settings tab
+        updateTelegramUserIdBtn.addEventListener('click', () => {
+            const newUserId = settingsTelegramUserIdInput.value.trim();
+            if (newUserId) {
+                telegramUserId = newUserId;
+                saveState();
+                showMessage('تم تحديث معرف تليجرام بنجاح! جاري محاولة إعادة الاتصال.', 'success', magnetMessageArea);
+                if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+                    ws.close(); // Close existing connection to force re-register with new ID
+                }
+                connectWebSocket(); // Attempt new connection with updated ID
+            } else {
+                showMessage('الرجاء إدخال معرف تليجرام.', 'error', magnetMessageArea);
+            }
+        });
+
+        // Clear Local Data button logic
+        clearDataBtn.addEventListener('click', () => {
+            if (confirm('هل أنت متأكد أنك تريد مسح جميع البيانات المحلية (معرف تليجرام وقائمة الأفلام)؟')) {
+                localStorage.clear(); // Clears everything
+                telegramUserId = '';
+                myMovies = [];
+                saveState(); // Ensure state is cleared
+                showMessage('تم مسح جميع البيانات المحلية بنجاح!', 'success', magnetMessageArea);
+                showTab('dashboard'); // Return to dashboard
+                if (ws) {
+                    ws.close(); // Close WebSocket connection
+                }
+                // Optional: show a message to re-enter Telegram ID
+                showMessage("تم مسح البيانات. يرجى إعادة إدخال معرف تليجرام الخاص بك في الإعدادات.", 'info', magnetMessageArea);
+            }
+        });
+
+        // Search button logic (Now just displays TMDB results, instructs user to use bot)
+        searchBtn.addEventListener('click', async () => {
+            const query = searchInput.value.trim();
+            searchResultsList.innerHTML = ''; // Clear previous results
+            noSearchResultsMessage.classList.add('hidden');
+            if (!query) {
+                showMessage('الرجاء إدخال كلمة للبحث.', 'info', magnetMessageArea);
+                return;
+            }
+
+            showLoading(true);
+            try {
+                const results = await searchTmdb(query, searchTypeSelect.value);
+                if (results.length > 0) {
+                    results.forEach(result => {
+                        const resultCard = document.createElement('div');
+                        resultCard.className = 'search-result-card';
+                        const imageUrl = result.imageUrl !== 'N/A' ? result.imageUrl : `https://placehold.co/60x90/4a4a7a/e0e0e0?text=N/A`;
+                        resultCard.innerHTML = `
+                            <img src="${imageUrl}" alt="${result.title}" onerror="this.onerror=null; this.src='https://placehold.co/60x90/4a4a7a/e0e0e0?text=N/A';" loading="lazy">
+                            <div class="search-result-info">
+                                <div class="search-result-title">${result.title}</div>
+                                <div class="search-result-details">${result.releaseYear} ${result.mediaType === 'movie' ? 'فيلم' : result.mediaType === 'tv' ? 'مسلسل' : ''}</div>
+                            </div>
+                            <!-- Removed the "Add" button as direct adding is via Telegram bot -->
+                        `;
+                        searchResultsList.appendChild(resultCard);
+                    });
+                     showMessage('لإضافة فيلم أو مسلسل، ابحث عن رابطه المغناطيسي ثم أرسله إلى بوت التليجرام الخاص بك.', 'info', magnetMessageArea);
+                } else {
+                    noSearchResultsMessage.classList.remove('hidden');
+                }
+            } catch (error) {
+                showMessage(`خطأ في البحث: ${error.message}`, 'error', magnetMessageArea);
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        // Add Magnet button logic (Now just informative)
+        // This button is disabled in HTML and only serves as a visual cue/instruction.
+        // Magnet processing happens via the Telegram bot.
+        addMagnetBtn.addEventListener('click', () => {
+            showMessage(
+                'الرجاء إرسال رابط المغناطيس مباشرة إلى بوت التليجرام الخاص بك: ' + 
+                '<a href="https://t.me/myrd_converter_bot" target="_blank" class="text-purple-400 hover:underline">@myrd_converter_bot</a>' +
+                ' وسيقوم البوت بإرسال الرابط المباشر إلى هنا تلقائياً.',
+                'info', magnetMessageArea
+            );
+        });
+
+        // Add Movie To Library button logic
+        function addMovieToLibraryBtnClick() {
+            if (currentProcessedMovie) {
+                const exists = myMovies.some(m => m.id === currentProcessedMovie.id);
+                if (!exists) {
+                    myMovies.push(currentProcessedMovie);
+                    saveState();
+                    showMessage('تمت إضافة الفيلم إلى مكتبتك بنجاح!', 'success', magnetMessageArea);
+                    document.getElementById('addMovieToLibraryBtnDynamic')?.classList.add('hidden');
+                } else {
+                    showMessage('الفيلم موجود بالفعل في مكتبتك.', 'info', magnetMessageArea);
+                }
+            } else {
+                showMessage('لا يوجد فيلم معالج لإضافته إلى المكتبة.', 'error', magnetMessageArea);
+            }
+        }
+
+        // Copy Link button logic
+        function copyLinkBtnClick() {
+            if (currentProcessedMovie && currentProcessedMovie.directLink) {
+                navigator.clipboard.writeText(currentProcessedMovie.directLink).then(() => {
+                    showMessage('تم نسخ الرابط المباشر إلى الحافظة!', 'success', magnetMessageArea);
+                }).catch(err => {
+                    console.error('Failed to copy text:', err);
+                    showMessage('فشل نسخ الرابط. يرجى النسخ يدوياً.', 'error', magnetMessageArea);
+                });
+            } else {
+                showMessage('لا يوجد رابط مباشر لنسخه.', 'info', magnetMessageArea);
+            }
+        }
+
+        // Download STREM file button logic
+        function downloadStrmBtnClick() {
+            if (currentProcessedMovie && currentProcessedMovie.directLink && currentProcessedMovie.title) {
+                const strmContent = currentProcessedMovie.directLink;
+                const fileName = `${currentProcessedMovie.title.replace(/[^\w\s.-]/g, '').replace(/\s+/g, '_')}.strm`;
+                const blob = new Blob([strmContent], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showMessage('تم إنشاء وتنزيل ملف STREM بنجاح!', 'success', magnetMessageArea);
+            } else {
+                showMessage('لا تتوفر معلومات كافية لتنزيل ملف STREM.', 'error', magnetMessageArea);
+            }
+        }
+    </script>
+</body>
+</html>
