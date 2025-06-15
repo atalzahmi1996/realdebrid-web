@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق Real-Debrid للويب</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for 'Inter' -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for dark mode and Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a2e; /* Dark background */
+            color: #e0e0e0; /* Light text color */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 0; /* Remove default body padding */
+            box-sizing: border-box;
+            overflow: hidden; /* Prevent body scroll, content will scroll */
+        }
+        /* Main app container to hold everything and enable full height */
+        .app-container {
+            background-color: #2a2a4a; /* Slightly lighter dark for container */
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            max-width: 800px;
+            width: 100%;
+            height: 98vh; /* Take full viewport height, adjust for aesthetic margins if needed */
+            margin: 1vh auto; /* Center vertically and horizontally */
+            display: flex;
+            flex-direction: column; /* Arrange content vertically */
+            border: 1px solid #4a4a7a;
+            overflow: hidden; /* Contain content inside */
+        }
+        /* Header styling */
+        .app-header {
+            padding: 20px 40px;
+            text-align: center;
+            border-bottom: 1px solid #4a4a7a;
+        }
+        /* Content display area - takes available space and allows scrolling */
+        #contentDisplayArea {
+            flex-grow: 1; /* Allow content area to expand and fill space */
+            overflow-y: auto; /* Enable vertical scrolling for content */
+            padding: 20px 40px; /* Add padding to content area */
+        }
+
+        /* Style for headings */
+        h1 {
+            color: #9d8fe6; /* Purple accent for headings */
+        }
+        /* Style for buttons with hover effect */
+        .btn-primary {
+            background-color: #6a5acd; /* Purple button */
+            color: white;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .btn-primary:hover {
+            background-color: #5a4bba;
+            transform: translateY(-2px);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: translateY(0);
+        }
+        /* Style for loading spinner */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #6a5acd;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        /* Small spinner for button */
+        .spinner-small {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid #fff;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Style for messages (success, error) */
+        .message {
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .message-success {
+            background-color: #28a74533; /* Green with transparency */
+            color: #28a745;
+        }
+        .message-error {
+            background-color: #dc354533; /* Red with transparency */
+            color: #dc3545;
+        }
+        .message-info {
+            background-color: #007bff33; /* Blue with transparency */
+            color: #007bff;
+        }
+
+        /* Movie card specific styles */
+        .movie-card {
+            background-color: #3a3a6a;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex; /* Use flex for internal layout */
+            flex-direction: column; /* Stack image and title vertically */
+            height: 100%; /* Ensure cards in grid have uniform height */
+        }
+        .movie-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        }
+        .movie-card img {
+            width: 100%;
+            height: 200px; /* Fixed height for image */
+            object-fit: cover; /* Ensures image covers area without distorting */
+        }
+        .movie-card-title {
+            color: #e0e0e0;
+            font-weight: 600;
+            padding: 10px;
+            white-space: nowrap; /* Prevent title from wrapping */
+            overflow: hidden; /* Hide overflow */
+            text-overflow: ellipsis; /* Add ellipsis for overflow */
+            flex-grow: 1; /* Allow title to take available space */
+            display: flex;
+            align-items: center; /* Center title vertically in its container */
+            justify-content: center; /* Center title horizontally in its container */
+        }
+
+        /* Search result card styles */
+        .search-result-card {
+            background-color: #3a3a6a;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            text-align: right; /* Ensure text aligns right within card */
+        }
+        .search-result-card img {
+            width: 60px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-left: 10px; /* Adjust margin for RTL */
+        }
+        .search-result-info {
+            flex-grow: 1;
+            margin-right: 10px; /* Add margin to separate info from button */
+        }
+        .search-result-title {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #e0e0e0;
+        }
+        .search-result-details {
+            font-size: 0.9em;
+            color: #b0b0b0;
+            margin-top: 2px;
+        }
+        .search-result-btn {
+            background-color: #4CAF50; /* Green for add */
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            white-space: nowrap; /* Prevent button text from wrapping */
+        }
+        .search-result-btn:hover {
+            background-color: #45a049;
+        }
+
+        /* Navigation Bar styles */
+        #navBar {
+            background-color: #1a1a2e;
+            padding: 10px 0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #4a4a7a;
+            width: 100%;
+            position: sticky; /* Sticky to bottom within its flex container */
+            bottom: 0;
+            z-index: 10;
+        }
+        .nav-btn {
+            flex: 1; /* Distribute space evenly */
+            text-align: center;
+            background: none;
+            border: none;
+            color: #e0e0e0;
+            cursor: pointer;
+            padding: 10px 5px;
+            transition: color 0.3s ease, background-color 0.3s ease;
+            border-radius: 8px;
+        }
+        .nav-btn:hover {
+            color: #9d8fe6;
+            background-color: #3a3a6a;
+        }
+        .nav-btn.active {
+            color: #9d8fe6;
+            background-color: #3a3a6a;
+        }
+        .nav-btn svg {
+            margin-bottom: 4px;
+            height: 24px;
+            width: 24px;
+            display: block; /* Ensure SVG takes full width */
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .nav-btn span {
+            font-size: 0.75em;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* Specific styles for tab content */
+        .tab-content {
+            padding-bottom: 20px; /* Add some bottom padding to tab content */
+        }
+
+        /* Detail Page specific styles */
+        #movieDetailPage {
+            transition: all 0.3s ease;
+        }
+
+        #movieDetailPage .container {
+            position: relative; /* Needed for close button positioning */
+            padding-top: 60px; /* Space for close button */
+        }
+
+        #closeDetailBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px; /* Adjusted for RTL */
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 2.5rem; /* Larger 'X' */
+            line-height: 1;
+            padding: 5px 10px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.3);
+            transition: background-color 0.2s;
+            z-index: 60; /* Above other content */
+        }
+        #closeDetailBtn:hover {
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+
+        /* Responsive adjustments for detail page */
+        @media (max-width: 768px) {
+            #movieDetailPage .flex {
+                flex-direction: column;
+            }
+            #detailPoster {
+                width: 100% !important;
+                height: auto; /* Allow height to adjust naturally */
+                max-height: 400px; /* Limit height on small screens */
+            }
+            #movieDetailPage .container {
+                padding-top: 80px; /* More space on mobile for close button */
+            }
+        }
+        /* Download Button specific style */
+        #downloadBtn {
+            background-color: #8B5CF6; /* Purple color */
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        #downloadBtn:hover {
+            background-color: #7C3AED;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="app-container">
+        <div class="app-header">
+            <h1 class="text-3xl font-bold">تطبيق Real-Debrid للويب</h1>
+        </div>
+
+        <!-- API Key Input Section (Initial Gate, now separate from main tabbed content) -->
+        <div id="apiKeyGateSection" class="p-8 text-right flex-grow flex flex-col justify-center items-center">
+            <div class="w-full max-w-md bg-[#2a2a4a] p-8 rounded-xl shadow-lg border border-[#4a4a7a]">
+                <h2 class="text-2xl font-bold mb-6 text-center text-purple-300">تسجيل الدخول / ربط الحساب</h2>
+                <label for="apiKeyInput" class="block text-gray-400 text-sm font-bold mb-2">مفتاح Real-Debrid API الخاص بك:</label>
+                <input type="text" id="apiKeyInput" placeholder="ادخل مفتاح API هنا"
+                       class="shadow appearance-none border border-gray-600 rounded-lg w-full py-3 px-4 text-gray-100 leading-tight bg-gray-700 focus:shadow-outline mb-3 text-right">
+                <button id="saveApiKeyBtn"
+                        class="btn-primary w-full py-3 px-4 rounded-lg font-bold text-lg focus:outline-none focus:shadow-outline">
+                    حفظ وربط الحساب
+                </button>
+                <p class="text-gray-500 text-xs mt-3 text-center">
+                    يمكنك العثور على مفتاح API الخاص بك في إعدادات حساب Real-Debrid:
+                    <a href="https://real-debrid.com/settings#api" target="_blank" class="text-purple-400 hover:underline">real-debrid.com/settings#api</a>
+                </p>
+                <div id="apiKeyMessageArea" class="mt-4"></div>
+            </div>
+        </div>
+
+        <!-- Main Content Area (Tabbed View - hidden until API key is set) -->
+        <div id="mainAppContent" class="hidden flex-grow flex flex-col">
+            <div id="contentDisplayArea">
+                <!-- Dashboard Tab Content -->
+                <div id="dashboardTab" class="tab-content">
+                    <div class="mt-4 border-b border-gray-700 pb-8 mb-8">
+                        <h2 class="text-2xl font-bold mb-6 text-center text-purple-300">بحث عن الأفلام والمسلسلات</h2>
+                        <p class="text-gray-500 text-sm mb-4 text-center">
+                            (ميزة البحث هذه تستخدم TMDB API.
+                            جرب البحث عن: <span class="text-purple-400">Interstellar, Inception, Matrix, Shawshank Redemption, Game of Thrones, Batman, Tenet, Lord of the Rings, Dune</span>)
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-3 mb-6">
+                            <input type="text" id="searchInput" placeholder="ابحث عن فيلم أو مسلسل..."
+                                   class="shadow appearance-none border border-gray-600 rounded-lg w-full py-3 px-4 text-gray-100 leading-tight bg-gray-700 focus:shadow-outline text-right flex-grow">
+                            <select id="searchType" class="bg-gray-700 border border-gray-600 rounded-lg px-3 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="multi">الكل</option>
+                                <option value="movie">أفلام فقط</option>
+                                <option value="tv">مسلسلات فقط</option>
+                            </select>
+                            <button id="searchBtn"
+                                    class="btn-primary py-3 px-6 rounded-lg font-bold text-lg focus:outline-none focus:shadow-outline sm:w-auto">
+                                بحث
+                            </button>
+                        </div>
+                        <div id="searchResultsList" class="mb-6">
+                            <!-- Search results will be injected here -->
+                        </div>
+                        <p id="noSearchResultsMessage" class="text-gray-500 text-center hidden">لا توجد نتائج بحث. يرجى تجربة كلمات أخرى.</p>
+                    </div>
+
+                    <h2 class="text-2xl font-bold mb-6 text-center mt-10 border-b border-gray-700 pb-8">أو أضف رابط المغناطيس مباشرة</h2>
+
+                    <div class="mb-4">
+                        <label for="magnetLinkInput" class="block text-gray-400 text-sm font-bold mb-2">رابط المغناطيس (Magnet Link):</label>
+                        <textarea id="magnetLinkInput" rows="4" placeholder="الصق رابط المغناطيس هنا..."
+                                  class="shadow appearance-none border border-gray-600 rounded-lg w-full py-3 px-4 text-gray-100 leading-tight bg-gray-700 focus:shadow-outline resize-y text-right"></textarea>
+                    </div>
+
+                    <button id="addMagnetBtn"
+                            class="btn-primary w-full py-3 px-4 rounded-lg font-bold text-lg focus:outline-none focus:shadow-outline">
+                        إضافة ومعالجة المغناطيس
+                    </button>
+
+                    <!-- Loading Indicator -->
+                    <div id="loadingIndicator" class="hidden flex justify-center items-center mt-6">
+                        <div class="spinner"></div>
+                        <p class="text-gray-400 mr-4">جاري المعالجة... يرجى الانتظار.</p>
+                    </div>
+
+                    <!-- Messages Area for magnet/processing -->
+                    <div id="magnetMessageArea" class="mt-6"></div>
+
+                    <!-- Manual Title Input Section (New) -->
+                    <div id="manualTitleInputSection" class="hidden mt-8">
+                        <p class="text-yellow-400 mb-4 text-center">
+                            لم نتمكن من استخلاص اسم الفيلم تلقائيًا من رابط المغناطيس أو لم يتم العثور على معلومات. الرجاء إدخال اسم الفيلم يدوياً للبحث في TMDB.
+                        </p>
+                        <label for="manualTitleInput" class="block text-gray-400 text-sm font-bold mb-2">اسم الفيلم/المسلسل يدوياً:</label>
+                        <input type="text" id="manualTitleInput" placeholder="ادخل اسم الفيلم هنا للبحث في TMDB"
+                               class="shadow appearance-none border border-gray-600 rounded-lg w-full py-3 px-4 text-gray-100 leading-tight bg-gray-700 focus:shadow-outline mb-3 text-right">
+                        <button id="searchManualTitleBtn"
+                                class="btn-primary w-full py-3 px-4 rounded-lg font-bold text-lg focus:outline-none focus:shadow-outline">
+                            البحث وإضافة الفيلم
+                        </button>
+                    </div>
+
+                    <!-- Direct Link Display Area -->
+                    <div id="directLinkArea" class="hidden mt-8 text-center bg-[#3a3a6a] p-6 rounded-lg shadow-inner">
+                        <!-- Content will be dynamically inserted here by displayMovieDirectLink -->
+                        <div class="flex flex-wrap justify-center mt-4">
+                            <button id="copyLinkBtnDynamic"
+                                    class="btn-primary flex-1 py-2 px-6 rounded-lg font-bold text-md focus:outline-none focus:shadow-outline mx-1 mb-2 sm:mb-0">
+                                نسخ الرابط
+                            </button>
+                            <button id="addMovieToLibraryBtnDynamic"
+                                    class="btn-primary flex-1 py-2 px-6 rounded-lg font-bold text-md focus:outline-none focus:shadow-outline mx-1 mb-2 sm:mb-0">
+                                إضافة إلى المكتبة
+                            </button>
+                            <button id="downloadStrmBtnDynamic"
+                                    class="btn-primary flex-1 py-2 px-6 rounded-lg font-bold text-md focus:outline-none focus:shadow-outline mx-1">
+                                تنزيل ملف STREM
+                            </button>
+                        </div>
+                        <p class="text-gray-500 text-xs mt-2">
+                            انقر على الرابط أعلاه لتشغيله في متصفحك أو استخدم زر "نسخ الرابط" للصقه في مشغل الفيديو المفضل لديك.
+                            يمكنك أيضاً تنزيل ملف STREM للاستخدام مع Kodi أو مشغلات أخرى.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Movies Tab Content -->
+                <div id="moviesTab" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold mb-6 text-center text-purple-300">مكتبة الأفلام المحلية</h2>
+                    <div id="movieList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        <!-- Movies will be injected here -->
+                    </div>
+                    <p id="noMoviesMessage" class="text-gray-500 text-center mt-4">لا توجد أفلام في مكتبتك بعد.</p>
+                </div>
+
+                <!-- Series Tab Content -->
+                <div id="seriesTab" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold mb-6 text-center text-purple-300">قسم المسلسلات</h2>
+                    <p class="text-gray-400 text-center">هذا القسم قيد الإنشاء. سيتم عرض المسلسلات هنا.</p>
+                </div>
+
+                <!-- Settings Tab Content -->
+                <div id="settingsTab" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold mb-6 text-center text-purple-300">الإعدادات</h2>
+                    <div class="mb-6">
+                        <label for="settingsApiKeyInput" class="block text-gray-400 text-sm font-bold mb-2">مفتاح Real-Debrid API الخاص بك:</label>
+                        <input type="text" id="settingsApiKeyInput" placeholder="ادخل مفتاح API هنا"
+                               class="shadow appearance-none border border-gray-600 rounded-lg w-full py-3 px-4 text-gray-100 leading-tight bg-gray-700 focus:shadow-outline mb-3 text-right">
+                        <button id="updateApiKeyBtn" class="btn-primary w-full py-3 px-4 rounded-lg font-bold text-lg focus:outline-none focus:shadow-outline">
+                            تحديث مفتاح API
+                        </button>
+                    </div>
+                    <button id="clearDataBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline w-full">
+                        مسح البيانات المحلية
+                    </button>
+                    <p class="text-gray-500 text-xs mt-3 text-center">
+                        (سيؤدي هذا إلى مسح مفتاح API وقائمة الأفلام المخزنة محليًا.)
+                    </p>
+                </div>
+            </div>
+
+            <!-- Navigation Bar -->
+            <div id="navBar">
+                <button class="nav-btn active" data-tab="dashboard">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m0 0l-7 7m7-7v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    <span class="text-xs">لوحة التحكم</span>
+                </button>
+                <button class="nav-btn" data-tab="movies">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M4 8h16M4 12h16M4 16h16" />
+                    </svg>
+                    <span class="text-xs">أفلام</span>
+                </button>
+                <button class="nav-btn" data-tab="series">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                     </svg>
+                    <span class="text-xs">مسلسلات</span>
+                </button>
+                <button class="nav-btn" data-tab="settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.398 2.572-1.065z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="text-xs">إعدادات</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Movie Detail Page (Initially Hidden) -->
+        <div id="movieDetailPage" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 overflow-auto flex justify-center items-center p-4">
+            <div class="container mx-auto p-4 max-w-4xl bg-[#2a2a4a] rounded-lg shadow-xl relative text-right">
+                <button id="closeDetailBtn" class="text-white absolute top-4 right-4 text-2xl mb-4 leading-none" aria-label="إغلاق التفاصيل">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <div id="detailContentContainer" class="relative">
+                     <!-- Loading Skeleton -->
+                    <div id="detailLoadingSkeleton" class="absolute inset-0 flex items-center justify-center bg-[#2a2a4a] z-10 hidden">
+                        <div class="spinner"></div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <img id="detailPoster" src="" alt="بوستر الفيلم" class="w-full md:w-1/3 rounded-lg shadow-lg object-cover h-auto max-h-[400px] md:max-h-full" onerror="this.onerror=null; this.src='https://placehold.co/300x450/4a4a7a/e0e0e0?text=${encodeURIComponent("لا توجد صورة")}'" loading="lazy">
+                        <div class="text-white flex-1">
+                            <h2 id="detailTitle" class="text-3xl font-bold mb-2"></h2>
+                            <div id="detailMeta" class="flex gap-4 my-2 text-gray-300 items-center justify-end md:justify-start">
+                                <!-- Year and Rating will be injected here -->
+                            </div>
+                            <p id="detailOverview" class="my-4 text-justify"></p>
+                            
+                            <div class="flex flex-wrap gap-3 mt-6 justify-end">
+                                <button id="playBtn" class="bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg font-bold">
+                                    تشغيل
+                                </button>
+                                <button id="playExternalBtn" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg font-bold">
+                                    فتح بمشغل خارجي
+                                </button>
+                                <button id="deleteBtn" class="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg font-bold">
+                                    حذف من المكتبة
+                                </button>
+                                <button id="downloadBtn" class="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-lg font-bold">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline ml-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                    تنزيل
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Get references to UI elements
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+        const apiKeyGateSection = document.getElementById('apiKeyGateSection'); // The initial gate
+        const mainAppContent = document.getElementById('mainAppContent'); // The main tabbed content area
+        const apiKeyMessageArea = document.getElementById('apiKeyMessageArea');
+
+        const magnetLinkInput = document.getElementById('magnetLinkInput');
+        const addMagnetBtn = document.getElementById('addMagnetBtn');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const magnetMessageArea = document.getElementById('magnetMessageArea'); // Specific message area for magnet process
+        const directLinkArea = document.getElementById('directLinkArea');
+        // Note: copyLinkBtn, addMovieToLibraryBtn, downloadStrmBtn are dynamically created within directLinkArea
+        // so their references need to be re-obtained or their event listeners re-attached after directLinkArea.innerHTML updates.
+
+        const movieList = document.getElementById('movieList'); // Now in moviesTab
+        const noMoviesMessage = document.getElementById('noMoviesMessage'); // Now in moviesTab
+
+        // Manual title input elements (within Dashboard tab)
+        const manualTitleInputSection = document.getElementById('manualTitleInputSection');
+        const manualTitleInput = document.getElementById('manualTitleInput');
+        const searchManualTitleBtn = document.getElementById('searchManualTitleBtn');
+
+        // Search elements (within Dashboard tab)
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const searchResultsList = document.getElementById('searchResultsList');
+        const noSearchResultsMessage = document.getElementById('noSearchResultsMessage');
+        const searchTypeSelect = document.getElementById('searchType'); // Added for advanced search options
+
+        // Tab content divs
+        const dashboardTab = document.getElementById('dashboardTab');
+        const moviesTab = document.getElementById('moviesTab'); // Dedicated Movies tab
+        const seriesTab = document.getElementById('seriesTab');
+        const settingsTab = document.getElementById('settingsTab');
+        const navButtons = document.querySelectorAll('.nav-btn'); // All navigation buttons
+
+        // Settings tab specific elements
+        const settingsApiKeyInput = document.getElementById('settingsApiKeyInput');
+        const updateApiKeyBtn = document.getElementById('updateApiKeyBtn');
+        const clearDataBtn = document.getElementById('clearDataBtn');
+
+        // New Detail Page Elements
+        const movieDetailPage = document.getElementById('movieDetailPage');
+        const closeDetailBtn = document.getElementById('closeDetailBtn');
+        const detailPoster = document.getElementById('detailPoster');
+        const detailTitle = document.getElementById('detailTitle');
+        const detailMeta = document.getElementById('detailMeta');
+        const detailOverview = document.getElementById('detailOverview');
+        const playBtn = document.getElementById('playBtn');
+        const playExternalBtn = document.getElementById('playExternalBtn');
+        const deleteBtn = document.getElementById('deleteBtn');
+        const downloadBtn = document.getElementById('downloadBtn'); // New download button reference
+        const detailLoadingSkeleton = document.getElementById('detailLoadingSkeleton');
+
+
+        // Variables
+        let realDebridApiKey = '';
+        // TMDB API Key - Replace with your actual key if deploying for real
+        const TMDB_API_KEY = '47b972fb486f4c35b33845e1a39359e0'; 
+        const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500'; // Base URL for TMDB movie posters
+
+        let myMovies = []; // Array to store user's local movie library
+        let currentProcessedMovie = null; // Stores the last processed movie details
+
+        // --- Utility Functions ---
+
+        /**
+         * Saves the current application state (API key, movies) to localStorage.
+         */
+        function saveState() {
+            localStorage.setItem('realDebridApiKey', realDebridApiKey);
+            localStorage.setItem('myMovies', JSON.stringify(myMovies));
+            console.log('State saved:', { realDebridApiKey, myMovies });
+        }
+
+        /**
+         * Loads the application state (API key, movies) from localStorage.
+         */
+        function loadState() {
+            realDebridApiKey = localStorage.getItem('realDebridApiKey') || '';
+            const storedMovies = localStorage.getItem('myMovies');
+            if (storedMovies) {
+                try {
+                    myMovies = JSON.parse(storedMovies);
+                } catch (e) {
+                    console.error("Error parsing stored movies:", e);
+                    myMovies = []; // Reset if parsing fails
+                }
+            } else {
+                myMovies = [];
+            }
+            console.log('State loaded:', { realDebridApiKey, myMovies });
+            // Update the API key input in settings when state is loaded
+            settingsApiKeyInput.value = realDebridApiKey;
+        }
+
+        /**
+         * Displays a message to the user in a styled box.
+         * @param {string} message The message text.
+         * @param {'success'|'error'|'info'} type The type of message (determines color).
+         * @param {HTMLElement} targetArea The HTML element where the message should be displayed.
+         */
+        function showMessage(message, type, targetArea) {
+            targetArea.innerHTML = `<div class="message message-${type}">${message}</div>`;
+            targetArea.classList.remove('hidden');
+            // Auto-hide messages after 5 seconds
+            setTimeout(() => {
+                clearMessage(targetArea);
+            }, 5000);
+        }
+
+        /**
+         * Clears any displayed messages.
+         * @param {HTMLElement} targetArea The HTML element from which the message should be cleared.
+         */
+        function clearMessage(targetArea) {
+            targetArea.innerHTML = '';
+            targetArea.classList.add('hidden');
+        }
+
+        /**
+         * Shows or hides the global loading spinner.
+         * @param {boolean} show True to show, false to hide.
+         */
+        function showLoading(show) {
+            if (show) {
+                loadingIndicator.classList.remove('hidden');
+            } else {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Sets the loading state for the addMagnetBtn specifically.
+         * @param {boolean} isLoading True to show loading, false to revert.
+         */
+        function setLoadingState(isLoading) {
+            if (isLoading) {
+                addMagnetBtn.disabled = true;
+                addMagnetBtn.innerHTML = `
+                    <span class="flex items-center justify-center">
+                        <span class="spinner-small ml-2"></span>
+                        جاري المعالجة...
+                    </span>
+                `;
+            } else {
+                addMagnetBtn.disabled = false;
+                addMagnetBtn.textContent = 'إضافة ومعالجة المغناطيس';
+            }
+        }
+
+        /**
+         * Shows a specific tab content and hides others.
+         * @param {string} tabName The name of the tab to show (e.g., 'dashboard', 'movies', 'series', 'settings').
+         */
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tabContent => {
+                tabContent.classList.add('hidden');
+            });
+            // Show the selected tab content
+            document.getElementById(tabName + 'Tab').classList.remove('hidden');
+
+            // Update active state for navigation buttons
+            navButtons.forEach(button => {
+                if (button.dataset.tab === tabName) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+
+            // Clear messages and hide direct link area when switching tabs
+            clearMessage(magnetMessageArea);
+            clearMessage(apiKeyMessageArea);
+            directLinkArea.classList.add('hidden');
+            manualTitleInputSection.classList.add('hidden'); // Hide manual input
+            searchResultsList.innerHTML = ''; // Clear search results
+            noSearchResultsMessage.classList.add('hidden');
+            
+            // Special handling for specific tabs
+            if (tabName === 'movies') { // Now the 'movies' tab
+                renderMovies(); // Re-render local movies when returning to movies tab
+            } else if (tabName === 'dashboard') {
+                searchInput.value = ''; // Clear search input
+                magnetLinkInput.value = ''; // Clear magnet input
+            } else if (tabName === 'settings') {
+                settingsApiKeyInput.value = realDebridApiKey; // Ensure settings input shows current key
+            }
+        }
+
+        /**
+         * Shows the API key input gate and hides main app content.
+         */
+        function showApiKeyGate() {
+            apiKeyGateSection.classList.remove('hidden');
+            mainAppContent.classList.add('hidden');
+            apiKeyInput.value = realDebridApiKey; // Populate input with current key if any
+            clearMessage(apiKeyMessageArea); // Clear any previous messages
+        }
+
+        /**
+         * Hides the API key input gate and shows main app content, defaulting to dashboard tab.
+         */
+        function showMainApp() {
+            apiKeyGateSection.classList.add('hidden');
+            mainAppContent.classList.remove('hidden');
+            showTab('dashboard'); // Default to dashboard tab
+        }
+
+        /**
+         * Renders the movies stored in myMovies array into the UI (local library).
+         */
+        function renderMovies() {
+            console.log("Rendering movies. Current myMovies:", myMovies);
+            movieList.innerHTML = ''; // Clear existing movies
+            if (myMovies.length === 0) {
+                noMoviesMessage.classList.remove('hidden');
+                console.log("No movies in library, showing noMoviesMessage.");
+            } else {
+                noMoviesMessage.classList.add('hidden');
+                console.log("Movies in library, hiding noMoviesMessage and rendering cards.");
+                // Sort movies by title alphabetically for consistent display
+                const sortedMovies = [...myMovies].sort((a, b) => a.title.localeCompare(b.title));
+
+                sortedMovies.forEach(movie => {
+                    const movieCard = document.createElement('div');
+                    movieCard.className = 'movie-card'; // Tailwind classes are in CSS
+                    // Use actual movie image or a placeholder if not available
+                    const imageUrl = movie.imageUrl && movie.imageUrl !== 'N/A' ? movie.imageUrl : `https://placehold.co/300x450/4a4a7a/e0e0e0?text=${encodeURIComponent("فيلم/مسلسل")}`; // Static placeholder
+                    movieCard.innerHTML = `
+                        <img src="${imageUrl}" alt="${movie.title}" class="rounded-t-lg" loading="lazy" onerror="this.onerror=null; this.src='https://placehold.co/300x450/4a4a7a/e0e0e0?text=${encodeURIComponent("لا توجد صورة")}}';">
+                        <div class="movie-card-title">${movie.title}</div>
+                    `;
+                    movieCard.addEventListener('click', () => {
+                        // When a movie card is clicked, open its dedicated detail page
+                        loadMovieDetails(movie.id, movie.mediaType || 'movie'); // Pass TMDB ID and type
+                    });
+                    movieList.appendChild(movieCard);
+                });
+            }
+        }
+
+        /**
+         * Displays the direct link information for a given movie object in the dashboard section.
+         * This is primarily for displaying the result of magnet processing or search 'Add' clicks.
+         * @param {object} movie The movie object containing title, link, etc.
+         */
+        function displayMovieDirectLink(movie) {
+            if (!movie || !movie.directLink || movie.directLink === '#') {
+                showMessage('خطأ: لا يوجد رابط مباشر لعرضه.', 'error', magnetMessageArea);
+                directLinkArea.classList.add('hidden');
+                return;
+            }
+            
+            // Rebuild the directLinkArea content dynamically
+            directLinkArea.innerHTML = `
+                <h3 class="text-xl font-bold mb-2 text-purple-400">${movie.title}</h3>
+                <div class="flex items-center justify-center mb-3 text-gray-300">
+                    ${movie.rating && movie.rating !== 'N/A' ? `
+                    <span class="bg-yellow-500 text-black text-sm px-2 py-1 rounded mr-2 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.538 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.783.57-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.92 8.72c-.783-.57-.381-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z" />
+                        </svg>
+                        ${movie.rating}/10
+                    </span>` : ''}
+                    ${movie.releaseYear && movie.releaseYear !== 'N/A' ? `<span>${movie.releaseYear}</span>` : ''}
+                </div>
+                <p class="text-gray-300 mb-4 text-justify">${movie.overview}</p>
+                <a id="dashboardMovieLink" href="${movie.directLink}" target="_blank"
+                   class="block text-lg break-all p-3 rounded-lg bg-gray-700 text-purple-300 hover:text-purple-200 hover:underline transition mb-4">
+                    ${movie.directLink}
+                </a>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <button id="copyLinkBtnDynamic"
+                            class="btn-primary flex-1 py-2 px-6 rounded-lg font-bold text-md focus:outline-none focus:shadow-outline mx-1 mb-2 sm:mb-0">
+                        نسخ الرابط
+                    </button>
+                    <button id="addMovieToLibraryBtnDynamic"
+                            class="btn-primary flex-1 py-2 px-6 rounded-lg font-bold text-md focus:outline-none focus:shadow-outline mx-1 mb-2 sm:mb-0">
+                        إضافة إلى المكتبة
+                    </button>
+                    <button id="downloadStrmBtnDynamic"
+                            class="btn-primary flex-1 py-2 px-6 rounded-lg font-bold text-md focus:outline-none focus:shadow-outline mx-1">
+                        تنزيل ملف STREM
+                    </button>
+                </div>
+                <p class="text-gray-500 text-xs mt-2">
+                    انقر على الرابط أعلاه لتشغيله في متصفحك أو استخدم زر "نسخ الرابط" للصقه في مشغل الفيديو المفضل لديك.
+                    يمكنك أيضاً تنزيل ملف STREM للاستخدام مع Kodi أو مشغلات أخرى.
+                </p>
+            `;
+            
+            directLinkArea.classList.remove('hidden');
+
+            // Re-attach event listeners for the buttons within the directLinkArea
+            // since their HTML was just overwritten.
+            document.getElementById('copyLinkBtnDynamic').onclick = copyLinkBtnClick;
+            document.getElementById('addMovieToLibraryBtnDynamic').onclick = addMovieToLibraryBtnClick;
+            document.getElementById('downloadStrmBtnDynamic').onclick = downloadStrmBtnClick;
+
+            // Check if movie already exists to hide/show add to library button
+            const existsInLibrary = myMovies.some(m => m.id === movie.id);
+            if (existsInLibrary) {
+                document.getElementById('addMovieToLibraryBtnDynamic').classList.add('hidden');
+                console.log(`Movie "${movie.title}" exists in library, hiding add button.`);
+            } else {
+                document.getElementById('addMovieToLibraryBtnDynamic').classList.remove('hidden');
+                console.log(`Movie "${movie.title}" not in library, showing add button.`);
+            }
+            directLinkArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+
+        /**
+         * Fetches detailed information for a movie/TV show from TMDB.
+         * @param {number} tmdbId The TMDB ID of the item.
+         * @param {string} mediaType 'movie' or 'tv'.
+         * @returns {Promise<object|null>} Promise that resolves with detailed TMDB data or null on error.
+         */
+        async function fetchMovieDetails(tmdbId, mediaType) {
+            try {
+                const response = await fetch(
+                    `https://api.themoviedb.org/3/${mediaType}/${tmdbId}?api_key=${TMDB_API_KEY}&language=ar`
+                );
+                
+                if (!response.ok) {
+                    console.error(`TMDB fetch details error: ${response.status}`);
+                    return null;
+                }
+                
+                const data = await response.json();
+                
+                return {
+                    id: `${mediaType}-${data.id}`,
+                    title: data.title || data.name,
+                    poster: data.poster_path ? TMDB_IMAGE_BASE_URL + data.poster_path : `https://placehold.co/300x450/4a4a7a/e0e0e0?text=${encodeURIComponent("لا توجد صورة")}`,
+                    releaseYear: (data.release_date || data.first_air_date) ? new Date(data.release_date || data.first_air_date).getFullYear() : 'N/A',
+                    overview: data.overview || 'لا يوجد وصف متاح.',
+                    mediaType: mediaType,
+                    rating: data.vote_average ? data.vote_average.toFixed(1) : 'N/A',
+                    // This directLink needs to be obtained from Real-Debrid in a real app,
+                    // but for this demo, we'll simulate it or use the one from `currentProcessedMovie` if available.
+                    directLink: currentProcessedMovie && currentProcessedMovie.id === `${mediaType}-${data.id}` ? currentProcessedMovie.directLink : `https://simulated.real-debrid.com/direct/link/${mediaType}-${data.id}-${encodeURIComponent(data.title || data.name)}.mp4`
+                };
+            } catch (error) {
+                console.error("Error fetching movie details from TMDB:", error);
+                return null;
+            }
+        }
+
+
+        /**
+         * Shows the detailed movie page.
+         * @param {object} movie The movie object with full details.
+         */
+        function showMovieDetail(movie) {
+            detailPoster.src = movie.poster;
+            detailTitle.textContent = movie.title;
+            detailOverview.textContent = movie.overview;
+            
+            detailMeta.innerHTML = `
+                ${movie.rating && movie.rating !== 'N/A' ? `
+                <span class="bg-yellow-500 text-black text-sm px-2 py-1 rounded ml-2 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.538 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.783.57-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.92 8.72c-.783-.57-.381-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z" />
+                    </svg>
+                    ${movie.rating}/10
+                </span>` : ''}
+                ${movie.releaseYear && movie.releaseYear !== 'N/A' ? `<span>${movie.releaseYear}</span>` : ''}
+            `;
+            
+            movieDetailPage.classList.remove('hidden');
+
+            // Set up button listeners for the detail page
+            playBtn.onclick = () => playMovie(movie);
+            playExternalBtn.onclick = () => playExternally(movie);
+            deleteBtn.onclick = () => deleteMovie(movie.id); // Assuming movie.id is the unique identifier
+            downloadBtn.onclick = () => downloadMovie(movie); // Attach download handler
+            
+            // Adjust delete button visibility based on if movie is in local library
+            const existsInLibrary = myMovies.some(m => m.id === movie.id);
+            if (existsInLibrary) {
+                deleteBtn.classList.remove('hidden');
+            } else {
+                deleteBtn.classList.add('hidden');
+            }
+
+            // Scroll to top of the detail page
+            movieDetailPage.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Close detail page
+        closeDetailBtn.onclick = () => {
+            movieDetailPage.classList.add('hidden');
+        };
+
+        /**
+         * Loads movie details and displays them in the detail page.
+         * @param {string} id The unique ID of the movie (e.g., 'tmdb-123', 'magnet-abc').
+         * @param {string} mediaType 'movie' or 'tv'.
+         */
+        async function loadMovieDetails(id, mediaType) {
+            detailLoadingSkeleton.classList.remove('hidden'); // Show skeleton
+            movieDetailPage.classList.remove('hidden'); // Show page frame
+
+            try {
+                // Find movie in local library first
+                let movieData = myMovies.find(m => m.id === id);
+
+                if (!movieData || !movieData.overview || !movieData.imageUrl || movieData.imageUrl === 'N/A') {
+                    // If not found or details are incomplete, fetch from TMDB
+                    const tmdbId = id.startsWith('tmdb-') ? id.substring(5) : id.startsWith('tv-') ? id.substring(3) : id; // Extract TMDB ID if prefixed
+                    const fetchedDetails = await fetchMovieDetails(tmdbId, mediaType);
+                    if (fetchedDetails) {
+                        movieData = { ...fetchedDetails, directLink: movieData?.directLink || fetchedDetails.directLink }; // Keep existing directLink if any
+                    } else {
+                        throw new Error("Could not fetch full movie details.");
+                    }
+                }
+                
+                if (movieData) {
+                    showMovieDetail(movieData);
+                } else {
+                    showMessage('فشل تحميل تفاصيل الفيلم.', 'error', magnetMessageArea);
+                    movieDetailPage.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error("Load movie details error:", error);
+                showMessage(`خطأ في تحميل تفاصيل الفيلم: ${error.message}`, 'error', magnetMessageArea);
+                movieDetailPage.classList.add('hidden');
+            } finally {
+                detailLoadingSkeleton.classList.add('hidden'); // Hide skeleton
+            }
+        }
+
+
+        /**
+         * Plays the movie using its direct link.
+         * @param {object} movie The movie object.
+         */
+        function playMovie(movie) {
+            if (movie.directLink && movie.directLink !== '#') {
+                window.open(movie.directLink, '_blank');
+            } else {
+                showMessage('لا يوجد رابط تشغيل متاح لهذا الفيلم.', 'info', magnetMessageArea);
+            }
+        }
+
+        /**
+         * Opens the movie's direct link in an external player (simulated for demo).
+         * @param {object} movie The movie object.
+         */
+        function playExternally(movie) {
+            if (movie.directLink && movie.directLink !== '#') {
+                const streamUrl = movie.directLink;
+                // For Android (using intent scheme, e.g., VLC or MX Player)
+                if (navigator.userAgent.match(/Android/i)) {
+                    // This is a common intent format, may not work for all players/devices
+                    window.open(`intent:${streamUrl}#Intent;package=org.videolan.vlc;end`, '_self');
+                    // Fallback for MX Player: intent:${streamUrl}#Intent;package=com.mxtech.videoplayer.ad;end
+                    showMessage('محاولة فتح الفيلم في VLC. تأكد من تثبيت VLC.', 'info', magnetMessageArea);
+                } 
+                // For Desktop (using custom URL schemes, often requires player setup)
+                else if (navigator.userAgent.match(/Windows|Mac|Linux/i)) {
+                    // Example for VLC, user needs VLC protocol handler installed
+                    window.open(`vlc://${encodeURIComponent(streamUrl)}`, '_self');
+                    showMessage('محاولة فتح الفيلم في VLC. قد تحتاج إلى تثبيت VLC وتكوين بروتوكولاته.', 'info', magnetMessageArea);
+                } else {
+                    // Generic fallback: open in new tab
+                    window.open(streamUrl, '_blank');
+                    showMessage('تم فتح الرابط في علامة تبويب جديدة. قد لا يدعم جهازك التشغيل الخارجي المباشر.', 'info', magnetMessageArea);
+                }
+            } else {
+                showMessage('لا يوجد رابط تشغيل متاح لفتحه بمشغل خارجي.', 'info', magnetMessageArea);
+            }
+        }
+
+        /**
+         * Initiates a download for the movie's direct link.
+         * @param {object} movie The movie object.
+         */
+        function downloadMovie(movie) {
+            if (movie.directLink && movie.directLink !== '#') {
+                const link = document.createElement('a');
+                link.href = movie.directLink;
+                // Sanitize filename for download
+                link.download = `${movie.title.replace(/[^\w\s-.]/g, '').replace(/\s+/g, '_')}.mp4`; 
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showMessage('بدأ التنزيل...', 'info', magnetMessageArea);
+            } else {
+                showMessage('لا يوجد رابط تنزيل متاح.', 'error', magnetMessageArea);
+            }
+        }
+
+        /**
+         * Deletes a movie from the local library.
+         * @param {string} movieId The ID of the movie to delete.
+         */
+        function deleteMovie(movieId) {
+            const initialLength = myMovies.length;
+            myMovies = myMovies.filter(movie => movie.id !== movieId);
+            if (myMovies.length < initialLength) {
+                saveState(); // Save updated state
+                renderMovies(); // Re-render the movie list in movies tab
+                closeDetailBtn.click(); // Close the detail page
+                showMessage('تم حذف الفيلم من مكتبتك بنجاح!', 'success', magnetMessageArea);
+            } else {
+                showMessage('لم يتم العثور على الفيلم لحذفه.', 'error', magnetMessageArea);
+            }
+        }
+
+
+        /**
+         * Checks for internet connection by attempting a small fetch to TMDB config.
+         * @returns {Promise<boolean>} True if connected, false otherwise.
+         */
+        async function checkInternetConnection() {
+            try {
+                // Fetching a very small, public endpoint from TMDB to check connectivity
+                const response = await fetch(`https://api.themoviedb.org/3/configuration?api_key=${TMDB_API_KEY}`, {
+                    method: 'HEAD', // Use HEAD request for minimal data transfer
+                    cache: 'no-store' // Do not use cache
+                });
+                return response.ok; // True if status is 2xx
+            } catch (e) {
+                console.warn("Internet connection check failed:", e);
+                return false;
+            }
+        }
+
+        /**
+         * Real TMDB API search call
+         * @param {string} query The search query
+         * @param {string} type The media type ('movie', 'tv', 'multi')
+         * @returns {Promise<Array<Object>>} Promise that resolves with TMDB search results
+         */
+        async function searchTmdb(query, type = 'multi') {
+            if (!query) return [];
+            
+            try {
+                const response = await fetch(
+                    `https://api.themoviedb.org/3/search/${type}?api_key=${TMDB_API_KEY}&language=ar&query=${encodeURIComponent(query)}`
+                );
+                
+                if (!response.ok) {
+                    throw new Error(`TMDB API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return data.results.map(item => ({
+                    id: item.id,
+                    title: item.title || item.name,
+                    // Handle release_date for movies and first_air_date for TV shows
+                    releaseYear: (item.release_date || item.first_air_date) ? new Date(item.release_date || item.first_air_date).getFullYear() : 'N/A',
+                    imageUrl: item.poster_path ? TMDB_IMAGE_BASE_URL + item.poster_path : 'N/A',
+                    overview: item.overview || 'لا يوجد وصف',
+                    mediaType: item.media_type, // 'movie' أو 'tv'
+                    rating: item.vote_average ? item.vote_average.toFixed(1) : 'N/A'
+                })).filter(item => item.title); // Ensure title exists
+            } catch (error) {
+                console.error("TMDB search error:", error);
+                // No message shown here, let the calling function handle it.
+                return [];
+            }
+        }
+
+        /**
+         * Checks if a string is a valid magnet link format.
+         * @param {string} link The string to check.
+         * @returns {boolean} True if it's a magnet link, false otherwise.
+         */
+        function isValidMagnet(link) {
+            return link.startsWith('magnet:?xt=urn:btih:');
+        }
+
+        /**
+         * Simulates fetching torrent name by hash from various remote APIs.
+         * In a real-world scenario, you would face CORS issues or rate limits,
+         * and would likely use a backend proxy for these calls.
+         * @param {string} hash The info hash of the torrent.
+         * @returns {Promise<string|null>} The torrent name found from any source, or null.
+         */
+        async function getTorrentNameByHash(hash) {
+            console.log(`Simulating torrent name lookup for hash: ${hash}`);
+
+            const sources = [
+                {
+                    name: "iTorrents",
+                    // In real app: `https://itorrents.org/torrent/${hash.toUpperCase()}.torrent`
+                    // Parser expects JSON with 'name' key after fetch
+                    simulate: async (h) => {
+                        await new Promise(r => setTimeout(r, 500));
+                        const names = {
+                            "d3daa72c3f4b527f625c3f9373120450685e806c": { name: "Inception (2010) [1080p]" },
+                            "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0": { name: "Interstellar.2014.WEBRip" }
+                        };
+                        return names[h.toLowerCase()];
+                    },
+                    parser: (data) => data?.name
+                },
+                {
+                    name: "Torrends",
+                    // In real app: `https://torrends.to/api/v1/torrents?hash=${hash}`
+                    // Parser expects JSON with 'torrents[0].title'
+                    simulate: async (h) => {
+                        await new Promise(r => setTimeout(r, 700));
+                        const names = {
+                             "b1b2b3b4b5b6b7b8b9c0c1c2c3c4c5c6c7c8c9d0": { torrents: [{ title: "The.Matrix.1999.BRRip" }] }
+                        };
+                        return names[h.toLowerCase()];
+                    },
+                    parser: (data) => data?.torrents?.[0]?.title
+                },
+                {
+                    name: "BTDigg",
+                    // In real app: `https://btdig.com/search?q=${hash}`
+                    // Parser expects HTML text and needs DOM parsing
+                    simulate: async (h) => {
+                        await new Promise(r => setTimeout(r, 900));
+                        const htmlContent = {
+                            "c1c2c3c4c5c6c7c8c9d0e1f2a3b4c5d6e7f8a9b0": `<div class="torrent_name">Game.of.Thrones.S01E01.720p.WEB-DL</div>`
+                        };
+                        return htmlContent[h.toLowerCase()];
+                    },
+                    parser: (html) => {
+                        if (!html) return null;
+                        // For real BTDigg: const parser = new DOMParser(); const doc = parser.parseFromString(html, 'text/html');
+                        // return doc.querySelector('.torrent_name')?.textContent?.trim();
+                        // For simulation, we just extract from simple string
+                        const match = html.match(/<div class="torrent_name">(.*?)<\/div>/);
+                        return match ? match[1] : null;
+                    }
+                },
+                 {
+                    name: "OpenSubtitles",
+                    // In real app: `https://api.opensubtitles.com/api/v1/subtitles?info_hash=${hash}` (requires API Key)
+                    // Parser expects JSON with 'data[0].attributes.movie_name'
+                    simulate: async (h) => {
+                        await new Promise(r => setTimeout(r, 600));
+                        const names = {
+                            "d0e1f2a3b4c5d6e7f8a9b0c1c2c3c4c5c6c7c8c9": { data: [{ attributes: { movie_name: "Dune (2021) [HDR]" } }] }
+                        };
+                        return names[h.toLowerCase()];
+                    },
+                    parser: (data) => data?.data?.[0]?.attributes?.movie_name
+                },
+                {
+                    name: "YTS",
+                    // In real app: `https://yts.mx/api/v2/movie_details.json?hash=${hash}`
+                    // Parser expects JSON with 'data.movie.title'
+                    simulate: async (h) => {
+                        await new Promise(r => setTimeout(r, 850));
+                        const names = {
+                            "e0e1e2e3e4e5e6e7e8e9f0f1f2f3f4f5f6f7f8f9": { data: { movie: { title: "Tenet (2020) YTS" } } }
+                        };
+                        return names[h.toLowerCase()];
+                    },
+                    parser: (data) => data?.data?.movie?.title
+                }
+            ];
+
+            for (const source of sources) {
+                try {
+                    // In a real app, you'd use fetch(source.url)
+                    const data = await source.simulate(hash); 
+                    const name = source.parser(data);
+                    if (name) {
+                        console.log(`Found name from ${source.name}: "${name}"`);
+                        return name;
+                    }
+                } catch (e) {
+                    console.warn(`Error simulating lookup with ${source.name}:`, e);
+                }
+            }
+            return null;
+        }
+
+
+        /**
+         * Real-Debrid API simulation.
+         * @param {string} endpoint The simulated API endpoint.
+         * @param {object} options Simulated options for the fetch call.
+         * @returns {Promise<object>} A promise that resolves with simulated JSON data.
+         */
+        async function callRealDebridApi(endpoint, options = {}) {
+            // Simulate network delay
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            if (endpoint.includes('/torrents/addMagnet')) {
+                // Simulate success for adding magnet
+                const filename = options.magnet?.match(/dn=([^&/]+)/)?.[1] || "simulated_magnet_file";
+                return {
+                    id: `rd-torrent-${Date.now()}`,
+                    uri: options.magnet,
+                    name: filename
+                };
+            } else if (endpoint.includes('/torrents/info/')) {
+                // Simulate torrent info with a single video file
+                return {
+                    id: `rd-torrent-info-${Date.now()}`, // Unique ID
+                    filename: "Simulated.Movie.Title.1080p.mp4",
+                    files: [
+                        { id: 1, path: "/Simulated.Movie.Title.1080p.mp4", bytes: 2000000000, selected: 1, streamable: 1 },
+                        { id: 2, path: "/Sample.txt", bytes: 10000, selected: 0, streamable: 0 }
+                    ],
+                    status: "downloaded"
+                };
+            } else if (endpoint.includes('/unrestrict/link')) {
+                // Simulate unrestrict link for a direct playable URL
+                return {
+                    id: `rd-unrestrict-link-${Date.now()}`, // Unique ID
+                    filename: "Simulated.Direct.Link.mp4",
+                    link: `https://simulated.real-debrid.com/direct/link/${Date.now()}/playable.mp4`,
+                    host: "simulated.host",
+                    mimeType: "video/mp4"
+                };
+            }
+            throw new Error(`Simulated Real-Debrid API call to ${endpoint} not implemented.`);
+        }
+
+        /**
+         * Cleans a raw torrent name string by removing common metadata.
+         * This function helps in getting a cleaner title for TMDB search.
+         * @param {string} rawName The raw name extracted from magnet or torrent API.
+         * @returns {string} The cleaned title.
+         */
+        function cleanTorrentName(rawName) {
+            if (!rawName) return null;
+            let cleanedTitle = rawName;
+
+            // Remove content in common brackets
+            cleanedTitle = cleanedTitle.replace(/\[.*?\]|\(.*?\)|\{.*?\}/g, ' ');
+
+            // Remove common quality, codec, source, audio, release tags
+            cleanedTitle = cleanedTitle.replace(/\b(?:1080p|720p|2160p|4k|uhd|fhd|hd|web-dl|webrip|bluray|brrip|dvdrip|xvid|x264|x265|h264|h265|aac|mp3|flac|ac3|dts|x\.264|x\.265|hevc|remux|repack|yts\.mx|yts|ettv|rarbg|eztv|flux|strife|demented|amiable|sparks|dimension|psa|evo|ion|gaf|vxt|mp4|mkv|avi|web|dl|est|farsi|persian|dubbed|multi|eng|french|german|italian|spanish|korean|japanese|chinese|hindi|arabic|rus|ita|fra|deu|jpn|kor|cn|hi|ar|swe|nor|fin|dan|nl|pl|cz|hu|tr|gr|ro|pt|es|mx|lat|sub|subs|external|internal|proper|limited|uncut|extended|director's cut|theatrical|blurayrip|web-dlrip|vhsrip|tvrip|cam|ts|hdts|hdcam|korsub|subbed|dubbed|s\d{1,2}e\d{1,2}|s\d{1,2}|e\d{1,2})\b/gi, ' ');
+            
+            // Replace separators with spaces
+            cleanedTitle = cleanedTitle.replace(/[\._-]/g, ' ');
+            
+            // Collapse multiple spaces and trim
+            cleanedTitle = cleanedTitle.replace(/\s+/g, ' ').trim();
+
+            // Remove year if it's at the end (e.g., "Movie Title 2023")
+            const yearMatch = cleanedTitle.match(/(.*)\s(19\d{2}|20\d{2})$/);
+            if (yearMatch && yearMatch[1]) {
+                cleanedTitle = yearMatch[1].trim();
+            }
+
+            // Remove common trailing numbers that might be part of torrent names
+            cleanedTitle = cleanedTitle.replace(/\s+\d{4,}\s*$/, '').trim();
+
+            return cleanedTitle.length > 2 ? cleanedTitle : null; // Ensure title is not too short after cleaning
+        }
+
+
+        /**
+         * Tries to extract a clean title from a magnet link's 'dn' (display name) parameter,
+         * or by hash lookup if 'dn' is not present.
+         * @param {string} magnetLink The full magnet link.
+         * @returns {Promise<string|null>} The extracted and cleaned title, or null if parsing fails.
+         */
+        async function extractTitleFromMagnet(magnetLink) {
+            let rawTitle = null;
+
+            try {
+                // 1. Try to get title from 'dn' parameter first (most common and reliable)
+                const dnMatch = magnetLink.match(/dn=([^&]+)/i);
+                if (dnMatch && dnMatch[1]) {
+                    rawTitle = dnMatch[1];
+                } else {
+                    // 2. Fallback: if 'dn' not found, try to extract hash and use getTorrentNameByHash
+                    const hashMatch = magnetLink.match(/btih:([a-f0-9]+)/i);
+                    if (hashMatch && hashMatch[1]) {
+                        const hash = hashMatch[1];
+                        const nameFromApi = await getTorrentNameByHash(hash);
+                        if (nameFromApi) {
+                            rawTitle = nameFromApi;
+                        }
+                    }
+                }
+
+                if (rawTitle) {
+                    return cleanTorrentName(rawTitle); // Use the new comprehensive cleaner
+                }
+            } catch (e) {
+                console.warn("Error processing magnet link for title extraction:", e);
+            }
+            return null; // Return null if unable to extract a meaningful title
+        }
+
+        // --- Event Listeners and Core Logic ---
+
+        // On document load, load state and check API key
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState(); // Load API key and movies from localStorage
+
+            if (realDebridApiKey) {
+                showMainApp(); // If key exists, show main app
+            } else {
+                showApiKeyGate(); // Otherwise, show API key input gate
+            }
+        });
+
+        // Event listener for navigation buttons
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabName = button.dataset.tab; // Get the tab name from data-tab attribute
+                showTab(tabName);
+            });
+        });
+
+        // Save API Key button logic on the initial gate
+        saveApiKeyBtn.addEventListener('click', () => {
+            const newKey = apiKeyInput.value.trim();
+            if (newKey) {
+                realDebridApiKey = newKey;
+                saveState();
+                showMessage('تم حفظ مفتاح API بنجاح!', 'success', apiKeyMessageArea);
+                setTimeout(() => {
+                    showMainApp(); // Transition to main app after success message
+                }, 1000);
+            } else {
+                showMessage('الرجاء إدخال مفتاح API.', 'error', apiKeyMessageArea);
+            }
+        });
+
+        // Update API Key button logic in settings tab
+        updateApiKeyBtn.addEventListener('click', () => {
+            const newKey = settingsApiKeyInput.value.trim();
+            if (newKey) {
+                realDebridApiKey = newK
