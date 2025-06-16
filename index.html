@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام تحويل الروابط المغناطيسية</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .login-container {
+            max-width: 500px;
+            margin: 100px auto;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+        .movie-card {
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .movie-card:hover {
+            transform: translateY(-5px);
+        }
+        .movie-poster {
+            height: 300px;
+            object-fit: cover;
+        }
+        .btn-vlc {
+            background-color: #ff8800;
+            color: white;
+        }
+        .btn-download {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-play {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- شاشة تسجيل الدخول -->
+    <div id="login-screen" class="login-container text-center">
+        <h2 class="mb-4">تسجيل الدخول</h2>
+        <div class="mb-3">
+            <input type="text" id="login-code" class="form-control" placeholder="أدخل الكود الذي حصلت عليه من البوت">
+        </div>
+        <button id="login-btn" class="btn btn-primary w-100">دخول</button>
+        <div class="mt-3">
+            <p>ليس لديك كود؟ <a href="https://t.me/YourBotUsername" target="_blank">احصل على كود من البوت</a></p>
+        </div>
+    </div>
+
+    <!-- شاشة المحتوى الرئيسية -->
+    <div id="main-screen" class="container-fluid py-4 d-none">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3>قائمة الأفلام</h3>
+                    <button id="logout-btn" class="btn btn-outline-danger">تسجيل الخروج</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="movies-container" class="row">
+            <!-- سيتم ملء الأفلام هنا عبر JavaScript -->
+        </div>
+    </div>
+
+    <!-- نموذج تفاصيل الفيلم -->
+    <div class="modal fade" id="movieModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="movieModalTitle">تفاصيل الفيلم</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <img id="moviePoster" src="" class="img-fluid rounded" alt="ملصق الفيلم">
+                        </div>
+                        <div class="col-md-8">
+                            <h4 id="movieTitle"></h4>
+                            <p id="movieOverview" class="text-muted"></p>
+                            <div class="mb-3">
+                                <span class="badge bg-info" id="movieYear"></span>
+                                <span class="badge bg-success ms-2" id="movieRating"></span>
+                                <span class="badge bg-warning text-dark ms-2" id="movieRuntime"></span>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button class="btn btn-play">
+                                    <i class="fas fa-play"></i> تشغيل
+                                </button>
+                                <button class="btn btn-vlc">
+                                    <i class="fab fa-vlc"></i> تشغيل في VLC
+                                </button>
+                                <button class="btn btn-download">
+                                    <i class="fas fa-download"></i> تحميل
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        // متغيرات التطبيق
+        let currentUser = null;
+        const API_BASE_URL = "https://your-website.com/api"; // استبدل برابط API الخاص بك
+        
+        // عناصر DOM
+        const loginScreen = document.getElementById('login-screen');
+        const mainScreen = document.getElementById('main-screen');
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const loginCodeInput = document.getElementById('login-code');
+        const moviesContainer = document.getElementById('movies-container');
+        const movieModal = new bootstrap.Modal(document.getElementById('movieModal'));
+        
+        // أحداث التسجيل
+        loginBtn.addEventListener('click', async () => {
+            const code = loginCodeInput.value.trim();
+            if (!code) {
+                alert('الرجاء إدخال كود الدخول');
+                return;
+            }
+            
+            try {
+                const response = await axios.post(`${API_BASE_URL}/verify_code`, { code });
+                
+                if (response.data.success) {
+                    currentUser = response.data.user;
+                    loginScreen.classList.add('d-none');
+                    mainScreen.classList.remove('d-none');
+                    loadUserMovies();
+                } else {
+                    alert('كود الدخول غير صحيح أو منتهي الصلاحية');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('حدث خطأ أثناء تسجيل الدخول');
+            }
+        });
+        
+        // حدث تسجيل الخروج
+        logoutBtn.addEventListener('click', () => {
+            currentUser = null;
+            mainScreen.classList.add('d-none');
+            loginScreen.classList.remove('d-none');
+            loginCodeInput.value = '';
+            moviesContainer.innerHTML = '';
+        });
+        
+        // تحميل أفلام المستخدم
+        async function loadUserMovies() {
+            try {
+                const response = await axios.get(`${API_BASE_URL}/user_movies?user_id=${currentUser.id}`);
+                displayMovies(response.data.movies);
+            } catch (error) {
+                console.error('Error loading movies:', error);
+                alert('حدث خطأ أثناء تحميل الأفلام');
+            }
+        }
+        
+        // عرض الأفلام في الواجهة
+        function displayMovies(movies) {
+            moviesContainer.innerHTML = '';
+            
+            if (movies.length === 0) {
+                moviesContainer.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <i class="fas fa-film fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">لا توجد أفلام متاحة</h4>
+                        <p>استخدم بوت التلجرام لإرسال روابط مغناطيسية</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            movies.forEach(movie => {
+                const movieCard = document.createElement('div');
+                movieCard.className = 'col-md-4 col-lg-3';
+                movieCard.innerHTML = `
+                    <div class="card movie-card">
+                        <img src="${movie.poster_url || 'https://via.placeholder.com/300x450'}" 
+                             class="card-img-top movie-poster" alt="${movie.title}">
+                        <div class="card-body">
+                            <h5 class="card-title">${movie.title}</h5>
+                            <p class="card-text text-muted small">${movie.year || 'غير معروف'}</p>
+                            <button class="btn btn-outline-primary w-100 view-details" 
+                                    data-movie-id="${movie.id}">
+                                التفاصيل
+                            </button>
+                        </div>
+                    </div>
+                `;
+                moviesContainer.appendChild(movieCard);
+            });
+            
+            // إضافة أحداث لأزرار التفاصيل
+            document.querySelectorAll('.view-details').forEach(btn => {
+                btn.addEventListener('click', () => showMovieDetails(btn.dataset.movieId));
+            });
+        }
+        
+        // عرض تفاصيل الفيلم
+        async function showMovieDetails(movieId) {
+            try {
+                const response = await axios.get(`${API_BASE_URL}/movie_details?id=${movieId}`);
+                const movie = response.data.movie;
+                
+                // تعبئة بيانات النموذج
+                document.getElementById('movieModalTitle').textContent = movie.title;
+                document.getElementById('movieTitle').textContent = movie.title;
+                document.getElementById('movieOverview').textContent = movie.overview || 'لا يوجد وصف متاح';
+                document.getElementById('movieYear').textContent = movie.year || 'غير معروف';
+                document.getElementById('movieRating').textContent = movie.rating ? `${movie.rating}/10` : 'غير متاح';
+                document.getElementById('movieRuntime').textContent = movie.runtime ? `${movie.runtime} دقيقة` : 'غير معروف';
+                document.getElementById('moviePoster').src = movie.poster_url || 'https://via.placeholder.com/300x450';
+                
+                // إعداد أزرار التشغيل والتحميل
+                const playBtn = document.querySelector('.btn-play');
+                const vlcBtn = document.querySelector('.btn-vlc');
+                const downloadBtn = document.querySelector('.btn-download');
+                
+                playBtn.onclick = () => playMovie(movie.stream_url);
+                vlcBtn.onclick = () => playInVLC(movie.stream_url);
+                downloadBtn.onclick = () => downloadMovie(movie.download_url);
+                
+                // عرض النموذج
+                movieModal.show();
+            } catch (error) {
+                console.error('Error loading movie details:', error);
+                alert('حدث خطأ أثناء تحميل تفاصيل الفيلم');
+            }
+        }
+        
+        // وظائف التشغيل والتحميل
+        function playMovie(url) {
+            window.open(url, '_blank');
+        }
+        
+        function playInVLC(url) {
+            window.open(`vlc://${url}`, '_blank');
+        }
+        
+        function downloadMovie(url) {
+            window.open(url, '_blank');
+        }
+        
+        // التحقق من وجود جلسة مسجلة عند تحميل الصفحة
+        async function checkSession() {
+            try {
+                const response = await axios.get(`${API_BASE_URL}/check_session`);
+                if (response.data.logged_in) {
+                    currentUser = response.data.user;
+                    loginScreen.classList.add('d-none');
+                    mainScreen.classList.remove('d-none');
+                    loadUserMovies();
+                }
+            } catch (error) {
+                console.error('Session check error:', error);
+            }
+        }
+        
+        // عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', checkSession);
+    </script>
+</body>
+</html>
