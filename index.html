@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>My Movie Hub</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -11,15 +10,32 @@
   <header>
     <h1>🎬 My Movie Hub</h1>
   </header>
+
   <main>
-    <section id="movies" class="movies-grid"></section>
-    <section class="magnet-section">
-      <h2>📎 Paste Magnet Link</h2>
-      <input type="text" id="magnetInput" placeholder="Enter magnet link..." />
-      <button onclick="convertMagnet()">🔁 تحويل المغناطيس</button>
-      <div id="magnetLinks"></div>
+    <section id="movies-section">
+      <h2>🔥 الأفلام الترند</h2>
+      <div id="movies" class="movie-grid"></div>
+    </section>
+
+    <section id="magnet-section">
+      <h2>🧲 تحويل رابط مغناطيسي</h2>
+      <input type="text" id="magnetInput" placeholder="ألصق رابط مغناطيسي هنا">
+      <button onclick="convertMagnet()">تحويل المغناطيس</button>
+      <div id="magnetResult"></div>
     </section>
   </main>
+
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <span onclick="closeModal()" class="close">&times;</span>
+      <h2 id="movieTitle"></h2>
+      <p id="movieOverview"></p>
+      <input type="text" id="manualMagnet" placeholder="ألصق مغناطيس للفيلم">
+      <button onclick="convertModalMagnet()">تحويل</button>
+      <div id="modalResult"></div>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
