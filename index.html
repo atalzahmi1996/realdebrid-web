@@ -3,26 +3,111 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Movie Hub</title>
-  <script defer src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <style>
-    body { background-color: #0f172a; color: white; }
-    .btn { @apply px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 transition; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #111;
+      color: #fff;
+    }
+    header {
+      padding: 1rem;
+      background-color: #1c1c1c;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    #movies {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+    }
+    .movie {
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .movie:hover {
+      transform: scale(1.05);
+    }
+    .movie img {
+      width: 100%;
+      border-radius: 10px;
+    }
+    #details {
+      padding: 1rem;
+      display: none;
+    }
+    .actions button {
+      margin-right: 10px;
+      background-color: #e50914;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .actions button:hover {
+      background-color: #f40612;
+    }
   </style>
 </head>
-<body class="min-h-screen flex flex-col">
-  <header class="p-4 bg-gray-900 shadow">
-    <h1 class="text-2xl font-bold">🎬 My Movie Hub</h1>
-    <input id="magnetInput" placeholder="Paste Magnet Link" class="mt-2 w-full p-2 text-black" />
-    <button onclick="handleMagnet()" class="btn mt-2">🔗 تحويل المغناطيس</button>
-  </header>  <main class="p-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4" id="movieContainer">
-    <!-- Movies will load here -->
-  </main>  <script>
-    const TMDB_API_KEY = '47b972fb486f4c35b33845e1a39359e0';
-    const REAL_DEBRID_KEY = '45COHUVTBKMQVASD5DGCO7FHUWL6FGRJKZBTUONAWO2C56NNQK3A';
+<body>
+  <header>My Movie Hub</header>
+  <div id="movies"></div>
+  <div id="details">
+    <h2 id="title"></h2>
+    <img id="poster" style="max-width: 200px;" />
+    <p id="overview"></p>
+    <div class="actions">
+      <button onclick="playMovie()"><i class="fa-solid fa-play"></i> تشغيل</button>
+      <button onclick="downloadMovie()"><i class="fa-solid fa-download"></i> تنزيل</button>
+      <button onclick="openInVLC()"><i class="fa-brands fa-vlc"></i> تشغيل في VLC</button>
+    </div>
+  </div>  <script>
+    const TMDB_KEY = "47b972fb486f4c35b33845e1a39359e0";
+    const REAL_DEBRID_TOKEN = "45COHUVTBKMQVASD5DGCO7FHUWL6FGRJKZBTUONAWO2C56NNQK3A";
 
     async function fetchMovies() {
-      const urls = [
-        `https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=en
+      const res = await fetch(`https://api.themoviedb.org/3/trending/movie/week?api_key=${TMDB_KEY}`);
+      const data = await res.json();
+      const movies = data.results;
+      const container = document.getElementById("movies");
+      container.innerHTML = "";
+      movies.forEach(movie => {
+        const div = document.createElement("div");
+        div.className = "movie";
+        div.innerHTML = `<img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}" />`;
+        div.onclick = () => showDetails(movie);
+        container.appendChild(div);
+      });
+    }
+
+    function showDetails(movie) {
+      document.getElementById("title").textContent = movie.title;
+      document.getElementById("poster").src = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
+      document.getElementById("overview").textContent = movie.overview;
+      document.getElementById("details").style.display = "block";
+
+      // Store ID for action buttons
+      selectedMovie = movie;
+    }
+
+    function playMovie() {
+      alert("تشغيل الفيلم: " + selectedMovie.title);
+      // استخدم Real-Debrid أو Magnet هنا
+    }
+
+    function downloadMovie() {
+      alert("تنزيل الفيلم: " + selectedMovie.title);
+    }
+
+    function openInVLC() {
+      alert("تشغيل في VLC: " + selectedMovie.title);
+    }
+
+    let selectedMovie = null;
+    fetchMovies();
+  </script></body>
+</html>
