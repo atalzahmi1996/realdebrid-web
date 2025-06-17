@@ -1,113 +1,22 @@
-<!DOCTYPE html><html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Movie Hub</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #111;
-      color: #fff;
-    }
-    header {
-      padding: 1rem;
-      background-color: #1c1c1c;
-      text-align: center;
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-    #movies {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 1rem;
-      padding: 1rem;
-    }
-    .movie {
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-    .movie:hover {
-      transform: scale(1.05);
-    }
-    .movie img {
-      width: 100%;
-      border-radius: 10px;
-    }
-    #details {
-      padding: 1rem;
-      display: none;
-    }
-    .actions button {
-      margin-right: 10px;
-      background-color: #e50914;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .actions button:hover {
-      background-color: #f40612;
-    }
-  </style>
-</head>
-<body>
-  <header>My Movie Hub</header>
-  <div id="movies"></div>
-  <div id="details">
-    <h2 id="title"></h2>
-    <img id="poster" style="max-width: 200px;" />
-    <p id="overview"></p>
-    <div class="actions">
-      <button onclick="playMovie()"><i class="fa-solid fa-play"></i> تشغيل</button>
-      <button onclick="downloadMovie()"><i class="fa-solid fa-download"></i> تنزيل</button>
-      <button onclick="openInVLC()"><i class="fa-brands fa-vlc"></i> تشغيل في VLC</button>
-    </div>
-  </div>  <script>
-    const TMDB_KEY = "47b972fb486f4c35b33845e1a39359e0";
-    const REAL_DEBRID_TOKEN = "45COHUVTBKMQVASD5DGCO7FHUWL6FGRJKZBTUONAWO2C56NNQK3A";
+// App.jsx import { useEffect, useState } from 'react' import { BrowserRouter as Router, Routes, Route, Link, useParams } from 'react-router-dom' import './App.css'
 
-    async function fetchMovies() {
-      const res = await fetch(`https://api.themoviedb.org/3/trending/movie/week?api_key=${TMDB_KEY}`);
-      const data = await res.json();
-      const movies = data.results;
-      const container = document.getElementById("movies");
-      container.innerHTML = "";
-      movies.forEach(movie => {
-        const div = document.createElement("div");
-        div.className = "movie";
-        div.innerHTML = `<img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}" />`;
-        div.onclick = () => showDetails(movie);
-        container.appendChild(div);
-      });
-    }
+const API_KEY = '47b972fb486f4c35b33845e1a39359e0' // TMDB const RD_API_KEY = '45COHUVTBKMQVASD5DGCO7FHUWL6FGRJKZBTUONAWO2C56NNQK3A'
 
-    function showDetails(movie) {
-      document.getElementById("title").textContent = movie.title;
-      document.getElementById("poster").src = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
-      document.getElementById("overview").textContent = movie.overview;
-      document.getElementById("details").style.display = "block";
+function Home() { const [movies, setMovies] = useState([])
 
-      // Store ID for action buttons
-      selectedMovie = movie;
-    }
+useEffect(() => { fetch(https://api.themoviedb.org/3/trending/movie/week?api_key=${API_KEY}) .then(res => res.json()) .then(data => setMovies(data.results)) }, [])
 
-    function playMovie() {
-      alert("تشغيل الفيلم: " + selectedMovie.title);
-      // استخدم Real-Debrid أو Magnet هنا
-    }
+return ( <div className="p-4"> <h1 className="text-2xl font-bold mb-4">🔥 Trending Movies</h1> <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"> {movies.map(movie => ( <Link to={/movie/${movie.id}} key={movie.id}> <div className="bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:scale-105 transition"> <img src={https://image.tmdb.org/t/p/w500${movie.poster_path}} alt={movie.title} /> <div className="p-2 text-sm text-white font-semibold text-center"> {movie.title} </div> </div> </Link> ))} </div> </div> ) }
 
-    function downloadMovie() {
-      alert("تنزيل الفيلم: " + selectedMovie.title);
-    }
+function MovieDetails() { const { id } = useParams() const [movie, setMovie] = useState(null) const [magnet, setMagnet] = useState('') const [direct, setDirect] = useState('')
 
-    function openInVLC() {
-      alert("تشغيل في VLC: " + selectedMovie.title);
-    }
+useEffect(() => { fetch(https://api.themoviedb.org/3/movie/${id}?api_key=${API_KEY}) .then(res => res.json()) .then(data => setMovie(data)) }, [id])
 
-    let selectedMovie = null;
-    fetchMovies();
-  </script></body>
-</html>
+const convertMagnet = async () => { const res = await fetch(https://api.real-debrid.com/rest/1.0/torrents/addMagnet, { method: 'POST', headers: { Authorization: Bearer ${RD_API_KEY}, 'Content-Type': 'application/x-www-form-urlencoded' }, body: magnet=${encodeURIComponent(magnet)} }) const data = await res.json() if (data.id) { const infoRes = await fetch(https://api.real-debrid.com/rest/1.0/torrents/info/${data.id}, { headers: { Authorization: Bearer ${RD_API_KEY} } }) const info = await infoRes.json() const file = info.files[0] const dlRes = await fetch(https://api.real-debrid.com/rest/1.0/unrestrict/link, { method: 'POST', headers: { Authorization: Bearer ${RD_API_KEY}, 'Content-Type': 'application/x-www-form-urlencoded' }, body: link=${encodeURIComponent(file.link)} }) const dlData = await dlRes.json() setDirect(dlData.download) } }
+
+if (!movie) return <div className="p-4 text-white">Loading...</div>
+
+return ( <div className="p-4"> <div className="flex flex-col md:flex-row gap-4"> <img className="w-full md:w-1/3 rounded-xl" src={https://image.tmdb.org/t/p/w500${movie.poster_path}} alt={movie.title} /> <div> <h2 className="text-3xl font-bold mb-2">{movie.title}</h2> <p className="mb-4 text-gray-300">{movie.overview}</p> <input type="text" placeholder="Paste Magnet Link" value={magnet} onChange={e => setMagnet(e.target.value)} className="w-full mb-2 p-2 rounded bg-gray-700 text-white" /> <button onClick={convertMagnet} className="bg-green-600 px-4 py-2 rounded mr-2">تحويل المغناطيس</button> {direct && ( <div className="mt-4 flex flex-col gap-2"> <a href={direct} target="_blank" className="bg-blue-500 px-4 py-2 rounded text-white text-center">🎬 تشغيل</a> <a href={direct} download className="bg-yellow-500 px-4 py-2 rounded text-white text-center">⬇️ تنزيل</a> <a href={vlc://${direct}} className="bg-purple-500 px-4 py-2 rounded text-white text-center">📺 تشغيل في VLC</a> </div> )} </div> </div> </div> ) }
+
+export default function App() { return ( <Router> <div className="bg-black min-h-screen text-white"> <Routes> <Route path="/" element={<Home />} /> <Route path="/movie/:id" element={<MovieDetails />} /> </Routes> </div> </Router> ) }
+
