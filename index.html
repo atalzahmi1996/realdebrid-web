@@ -1,32 +1,46 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MovieHub 🎬</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مركز الأفلام 🎬</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header>
-    <h1>🎬 MovieHub</h1>
+    <h1>🎬 مركز الأفلام</h1>
     <nav>
-      <button onclick="showSection('movies')">📺 الأفلام</button>
+      <button onclick="showSection('movies')">🎥 الأفلام</button>
       <button onclick="showSection('magnet')">🧲 تحويل المغناطيس</button>
+      <button onclick="showManualSearch()">🔍 بحث يدوي</button>
     </nav>
   </header>
 
   <main>
+    <!-- قسم عرض الأفلام -->
     <section id="movies" class="section active">
       <div id="movie-list" class="grid"></div>
     </section>
 
-    <section id="movie-details" class="section hidden"></section>
+    <!-- قسم تفاصيل الفيلم -->
+    <section id="movie-details" class="section hidden">
+      <!-- سيتم تعبئته ديناميكياً -->
+    </section>
 
+    <!-- قسم تحويل المغناطيس -->
     <section id="magnet" class="section hidden">
       <h2>🧲 تحويل رابط مغناطيسي</h2>
-      <input type="text" id="magnetInput" placeholder="أدخل رابط المغناطيس هنا" />
-      <button onclick="convertMagnet()">تحويل</button>
-      <div id="convertedResult"></div>
+      <input type="text" id="magnetInput" placeholder="أدخل رابط المغناطيس هنا...">
+      <button onclick="convertMagnet()">تحويل الرابط</button>
+      <div id="convertedResult" class="result-box"></div>
+    </section>
+
+    <!-- قسم البحث اليدوي -->
+    <section id="manual-search" class="section hidden">
+      <h2>🔍 بحث عن تورنت</h2>
+      <input type="text" id="searchQuery" placeholder="أدخل اسم الفيلم...">
+      <button onclick="searchTorrents(document.getElementById('searchQuery').value)">بحث</button>
+      <div id="torrent-results"></div>
     </section>
   </main>
 
