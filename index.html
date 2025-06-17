@@ -4,32 +4,47 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🎬 مركز الأفلام</title>
+  <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Tajawal', sans-serif;
-      background: #121212;
-      color: #fff;
-    }
-    .loading {
-      display: flex;
-      justify-content: center;
-      padding: 50px;
-      font-size: 24px;
-    }
-  </style>
 </head>
 <body>
-  <div id="app">
-    <div class="loading">
-      <i class="fas fa-spinner fa-spin"></i> جاري التحميل...
-    </div>
-  </div>
+  <header>
+    <h1><i class="fas fa-film"></i> مركز الأفلام</h1>
+    <nav>
+      <button id="movies-btn"><i class="fas fa-video"></i> الأفلام</button>
+      <button id="magnet-btn"><i class="fas fa-magnet"></i> تحويل المغناطيس</button>
+      <button id="search-btn"><i class="fas fa-search"></i> بحث يدوي</button>
+    </nav>
+  </header>
 
-  <!-- الروابط الأساسية -->
-  <script src="https://cdn.jsdelivr.net/npm/vue@3.2.47/dist/vue.global.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script src="app.js"></script>
+  <main>
+    <!-- قسم الأفلام -->
+    <section id="movies-section" class="active">
+      <h2><i class="fas fa-fire"></i> الأفلام الشائعة</h2>
+      <div id="movies-grid" class="grid"></div>
+    </section>
+
+    <!-- قسم تحويل المغناطيس -->
+    <section id="magnet-section">
+      <h2><i class="fas fa-exchange-alt"></i> تحويل رابط مغناطيسي</h2>
+      <div class="input-box">
+        <input type="text" id="magnet-input" placeholder="أدخل رابط المغناطيس هنا...">
+        <button id="convert-btn"><i class="fas fa-bolt"></i> تحويل</button>
+      </div>
+      <div id="magnet-results"></div>
+    </section>
+
+    <!-- قسم البحث -->
+    <section id="search-section">
+      <h2><i class="fas fa-search-plus"></i> بحث عن تورنت</h2>
+      <div class="input-box">
+        <input type="text" id="search-input" placeholder="أدخل اسم الفيلم...">
+        <button id="torrent-search-btn"><i class="fas fa-search"></i> بحث</button>
+      </div>
+      <div id="torrent-results"></div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
 </body>
 </html>
