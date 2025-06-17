@@ -1,51 +1,97 @@
+const API_KEY = '47b972fb486f4c35b33845e1a39359e0';
+const RD_API_KEY = '45COHUVTBKMQVASD5DGCO7FHUWL6FGRJKZBTUONAWO2C56NNQK3A';
 
-body {
-  font-family: Arial, sans-serif;
-  background-color: #121212;
-  color: #fff;
-  margin: 0;
-  padding: 0;
+// عرض الأفلام الترند
+fetch(`https://api.themoviedb.org/3/trending/movie/week?api_key=${API_KEY}`)
+  .then(res => res.json())
+  .then(data => {
+    const moviesContainer = document.getElementById('movies');
+    data.results.forEach(movie => {
+      const card = document.createElement('div');
+      card.className = 'movie-card';
+      card.innerHTML = `
+        <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}" />
+      `;
+      card.onclick = () => showModal(movie.id);
+      moviesContainer.appendChild(card);
+    });
+  });
+
+// إظهار مودال الفيلم
+function showModal(id) {
+  fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${API_KEY}`)
+    .then(res => res.json())
+    .then(movie => {
+      document.getElementById('movieTitle').innerText = movie.title;
+      document.getElementById('movieOverview').innerText = movie.overview;
+      document.getElementById('manualMagnet').value = '';
+      document.getElementById('modalResult').innerHTML = '';
+      document.getElementById('modal').style.display = 'flex';
+    });
 }
-header {
-  background-color: #1f1f1f;
-  padding: 1rem;
-  text-align: center;
+
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
 }
-.movies-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-  padding: 1rem;
+
+// تحويل رابط مغناطيسي عام
+function convertMagnet() {
+  const magnet = document.getElementById('magnetInput').value;
+  fetch(`https://api.real-debrid.com/rest/1.0/torrents/addMagnet`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RD_API_KEY}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: `magnet=${encodeURIComponent(magnet)}`
+  })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('magnetResult').innerText = `تم إضافة المغناطيس (ID: ${data.id || 'فشل'})`;
+    });
 }
-.movie {
-  background-color: #2a2a2a;
-  padding: 0.5rem;
-  border-radius: 10px;
-  text-align: center;
-}
-.movie img {
-  width: 100%;
-  border-radius: 5px;
-}
-.magnet-section {
-  padding: 1rem;
-  background-color: #1e1e1e;
-}
-input[type="text"] {
-  width: 100%;
-  padding: 0.5rem;
-  margin: 0.5rem 0;
-  border: none;
-  border-radius: 5px;
-}
-button {
-  padding: 0.5rem 1rem;
-  background-color: #ff5722;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-button:hover {
-  background-color: #e64a19;
+
+// تحويل مغناطيس داخل الفيلم
+function convertModalMagnet() {
+  const magnet = document.getElementById('manualMagnet').value;
+  fetch(`https://api.real-debrid.com/rest/1.0/torrents/addMagnet`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RD_API_KEY}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: `magnet=${encodeURIComponent(magnet)}`
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.id) {
+        fetch(`https://api.real-debrid.com/rest/1.0/torrents/info/${data.id}`, {
+          headers: {
+            Authorization: `Bearer ${RD_API_KEY}`
+          }
+        })
+          .then(res => res.json())
+          .then(info => {
+            const file = info.files[0];
+            fetch(`https://api.real-debrid.com/rest/1.0/unrestrict/link`, {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${RD_API_KEY}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+              },
+              body: `link=${encodeURIComponent(file.link)}`
+            })
+              .then(res => res.json())
+              .then(dl => {
+                document.getElementById('modalResult').innerHTML = `
+                  <p><a href="${dl.download}" target="_blank">🎬 تشغيل</a></p>
+                  <p><a href="${dl.download}" download>⬇️ تحميل</a></p>
+                  <p><a href="vlc://${dl.download}">📺 فتح بـ VLC</a></p>
+                `;
+              });
+          });
+      } else {
+        document.getElementById('modalResult').innerText = 'فشل في الإضافة.';
+      }
+    });
 }
