@@ -1,6 +1,6 @@
 // ========== الإعدادات ==========
-const TMDB_API_KEY = "47b972fb486f4c35b33845e1a39359e0"; // استبدل بمفتاحك
-const RD_API_KEY = "45COHUVTBKMQVASD5DGCO7FHUWL6FGRJKZBTUONAWO2C56NNQK3A"; // استبدل بمفتاحك
+const TMDB_API_KEY = "47b972fb486f4c35b33845e1a39359e0";
+const RD_API_KEY = "45COHUVTBKMQVASD5DGCO7FHUWL6FGRJKZBTUONAWO2C56NNQK3A";
 const BASE_IMG_URL = "https://image.tmdb.org/t/p/w500";
 
 // ========== العناصر ==========
@@ -55,7 +55,6 @@ async function loadTrendingMovies() {
     const response = await fetch(
       `https://api.themoviedb.org/3/trending/movie/week?api_key=${TMDB_API_KEY}`
     );
-
     if (!response.ok) throw new Error("فشل في جلب البيانات");
 
     const data = await response.json();
@@ -98,7 +97,6 @@ async function showMovieDetails(id) {
       fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}`),
       fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${TMDB_API_KEY}`)
     ]);
-
     if (!movieRes.ok || !creditsRes.ok) throw new Error("فشل في جلب التفاصيل");
 
     const movie = await movieRes.json();
@@ -151,8 +149,7 @@ async function searchTorrents(query = null) {
   `;
 
   try {
-    // استخدام proxy لتجاوز CORS
-    const ytsRes = await fetch(`https://corsproxy.io/?https://yts.mx/api/v2/list_movies.json?query_term=${encodeURIComponent(searchQuery)}`);
+    const ytsRes = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent("https://yts.mx/api/v2/list_movies.json?query_term=" + searchQuery)}`);
     const ytsData = await ytsRes.json();
 
     let html = "<h3><i class='fas fa-torrent'></i> النتائج:</h3>";
@@ -204,7 +201,6 @@ async function convertMagnet(magnetLink = null) {
   if (!magnetLink) switchSection("magnet");
 
   try {
-    // محاكاة التحويل
     await new Promise(resolve => setTimeout(resolve, 2000));
     const mockDownloadLink = "https://example.com/converted-file.mp4";
 
