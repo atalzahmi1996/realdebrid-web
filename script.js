@@ -149,8 +149,9 @@ async function searchTorrents(query = null) {
   `;
 
   try {
-    const ytsRes = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent("https://yts.mx/api/v2/list_movies.json?query_term=" + searchQuery)}`);
-    const ytsData = await ytsRes.json();
+    const proxyURL = `https://api.allorigins.win/raw?url=${encodeURIComponent("https://yts.mx/api/v2/list_movies.json?query_term=" + searchQuery)}`;
+    const ytsRes = await fetch(proxyURL);
+    const ytsData = JSON.parse(await ytsRes.text()); // ← هذا هو التعديل النهائي
 
     let html = "<h3><i class='fas fa-torrent'></i> النتائج:</h3>";
 
