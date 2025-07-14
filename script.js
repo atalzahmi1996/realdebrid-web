@@ -28,29 +28,21 @@ const resultContainers = {
 
 // ========== تهيئة التطبيق ==========
 document.addEventListener("DOMContentLoaded", () => {
-  // تعيين معالجي الأحداث
   buttons.movies.addEventListener("click", () => switchSection("movies"));
   buttons.magnet.addEventListener("click", () => switchSection("magnet"));
   buttons.search.addEventListener("click", () => switchSection("search"));
-  
+
   document.getElementById("convert-btn").addEventListener("click", convertMagnet);
   document.getElementById("torrent-search-btn").addEventListener("click", searchTorrents);
-  
-  // تحميل الأفلام عند البدء
+
   loadTrendingMovies();
 });
 
 // ========== وظائف التنقل ==========
 function switchSection(section) {
-  // إخفاء جميع الأقسام
-  Object.values(sections).forEach(sec => {
-    sec.classList.remove("active");
-  });
-  
-  // إظهار القسم المطلوب
+  Object.values(sections).forEach(sec => sec.classList.remove("active"));
   sections[section].classList.add("active");
-  
-  // تحديث الأزرار النشطة
+
   Object.values(buttons).forEach(btn => {
     btn.style.background = "rgba(255, 255, 255, 0.2)";
   });
@@ -63,9 +55,9 @@ async function loadTrendingMovies() {
     const response = await fetch(
       `https://api.themoviedb.org/3/trending/movie/week?api_key=${TMDB_API_KEY}`
     );
-    
+
     if (!response.ok) throw new Error("فشل في جلب البيانات");
-    
+
     const data = await response.json();
     displayMovies(data.results);
   } catch (error) {
@@ -82,7 +74,7 @@ async function loadTrendingMovies() {
 function displayMovies(movies) {
   const container = document.getElementById("movies-grid");
   container.innerHTML = "";
-  
+
   movies.forEach(movie => {
     const card = document.createElement("div");
     card.className = "movie-card";
@@ -106,15 +98,15 @@ async function showMovieDetails(id) {
       fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}`),
       fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${TMDB_API_KEY}`)
     ]);
-    
+
     if (!movieRes.ok || !creditsRes.ok) throw new Error("فشل في جلب التفاصيل");
-    
+
     const movie = await movieRes.json();
     const credits = await creditsRes.json();
-    
+
     const director = credits.crew.find(p => p.job === "Director")?.name || "غير معروف";
     const actors = credits.cast.slice(0, 5).map(a => a.name).join(", ") || "غير معروف";
-    
+
     sections.movies.innerHTML = `
       <button onclick="switchSection('movies')" style="margin-bottom: 20px;">
         <i class="fas fa-arrow-left"></i> العودة
@@ -150,21 +142,21 @@ async function showMovieDetails(id) {
 async function searchTorrents(query = null) {
   const searchQuery = query || inputFields.search.value.trim();
   if (!searchQuery) return alert("❗ يرجى إدخال اسم للبحث");
-  
+
   switchSection("search");
   resultContainers.torrent.innerHTML = `
     <div class="loading">
       <i class="fas fa-spinner fa-spin"></i> جاري البحث عن "${searchQuery}"...
     </div>
   `;
-  
+
   try {
-    // البحث في YTS
-    const ytsRes = await fetch(`https://yts.mx/api/v2/list_movies.json?query_term=${encodeURIComponent(searchQuery)}`);
+    // استخدام proxy لتجاوز CORS
+    const ytsRes = await fetch(`https://corsproxy.io/?https://yts.mx/api/v2/list_movies.json?query_term=${encodeURIComponent(searchQuery)}`);
     const ytsData = await ytsRes.json();
-    
+
     let html = "<h3><i class='fas fa-torrent'></i> النتائج:</h3>";
-    
+
     if (ytsData.data?.movies?.length > 0) {
       ytsData.data.movies[0].torrents.forEach(torrent => {
         html += `
@@ -184,7 +176,7 @@ async function searchTorrents(query = null) {
     } else {
       html += "<p>❌ لا توجد نتائج من YTS</p>";
     }
-    
+
     resultContainers.torrent.innerHTML = html;
   } catch (error) {
     console.error("Search error:", error);
@@ -201,33 +193,21 @@ async function searchTorrents(query = null) {
 async function convertMagnet(magnetLink = null) {
   const magnet = magnetLink || inputFields.magnet.value.trim();
   if (!magnet) return alert("❗ يرجى إدخال رابط مغناطيسي");
-  
+
   const resultDiv = magnetLink ? resultContainers.torrent : resultContainers.magnet;
   resultDiv.innerHTML = `
     <div class="loading">
       <i class="fas fa-spinner fa-spin"></i> جاري تحويل الرابط...
     </div>
   `;
-  
+
   if (!magnetLink) switchSection("magnet");
-  
+
   try {
-    // محاكاة التحويل (استبدل هذا بالكود الحقيقي لـ Real-Debrid)
+    // محاكاة التحويل
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // في الواقع: استخدم Real-Debrid API هنا
-    // const response = await fetch("https://api.real-debrid.com/rest/1.0/torrents/addMagnet", {
-    //   method: "POST",
-    //   headers: {
-    //     "Authorization": `Bearer ${RD_API_KEY}`,
-    //     "Content-Type": "application/x-www-form-urlencoded"
-    //   },
-    //   body: `magnet=${encodeURIComponent(magnet)}`
-    // });
-    
-    // محاكاة الرابط المحول
     const mockDownloadLink = "https://example.com/converted-file.mp4";
-    
+
     resultDiv.innerHTML = `
       <div class="success">
         <p><i class="fas fa-check-circle"></i> تم التحويل بنجاح!</p>
